@@ -91,6 +91,19 @@ class DolibarrClient:
             params={"includetimespent": "2"},
         )
 
+    def get_project_invoices(self, project_id: int) -> list[dict[str, Any]]:
+        """Get all invoices for a specific project"""
+        return self._request(
+            "GET",
+            "/api/index.php/invoices",
+            params={
+                "sortfield": "t.rowid",
+                "sortorder": "ASC",
+                "limit": "100",
+                "sqlfilters": f"(fk_projet:=:{project_id})",
+            },
+        )
+
     # ========== THIRDPARTIES (CLIENTS) ==========
 
     def get_thirdparty(self, thirdparty_id: int) -> dict[str, Any]:

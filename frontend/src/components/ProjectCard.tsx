@@ -49,42 +49,43 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   return (
     <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
       {/* Header with title and badges */}
-      <div className="flex items-start justify-between mb-4 gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-bold text-slate-100">{project.title}</h3>
-            <a
-              href={dolibarrLinks.project(project.id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-slate-400 hover:text-blue-400 transition-colors"
-            >
-              <ExternalLink size={16} />
-            </a>
+      <div className="mb-4">
+        <div className="flex items-start justify-between mb-2 gap-3">
+          <a
+            href={dolibarrLinks.project(project.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 flex-1 min-w-0 hover:text-blue-300 transition-colors group"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-slate-100 whitespace-nowrap flex-1 min-w-0">{project.title}</h3>
+            <ExternalLink size={14} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
+
+          {/* Badges - right aligned */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {unittechs.map((ut) => (
+              <span key={ut.badge} className={`${ut.color} text-white text-xs px-2 py-1 rounded font-semibold whitespace-nowrap shadow-lg`}>
+                {ut.badge}
+              </span>
+            ))}
           </div>
-
-          <p className="text-xs text-slate-500 mb-2">{project.ref}</p>
         </div>
 
-        {/* Badges - right aligned */}
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {unittechs.map((ut) => (
-            <span key={ut.badge} className={`${ut.color} text-white text-xs px-2 py-1 rounded font-semibold whitespace-nowrap shadow-lg`}>
-              {ut.badge}
-            </span>
-          ))}
-        </div>
+        <p className="text-xs text-slate-500 truncate">{project.ref}</p>
       </div>
 
       {/* Client name */}
-      <a
-        href={dolibarrLinks.thirdparty(project.client_id)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-blue-400 hover:text-blue-300 hover:underline block mb-4 font-medium transition-colors"
-      >
-        {project.client_name || 'N/A'}
-      </a>
+      {!project.is_rd && (
+        <a
+          href={dolibarrLinks.thirdparty(project.client_id)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-blue-400 hover:text-blue-300 hover:underline block mb-4 font-medium transition-colors"
+        >
+          {project.client_name || 'N/A'}
+        </a>
+      )}
 
       {/* Info rows */}
       <div className="space-y-2 text-sm">
@@ -109,18 +110,27 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         </div>
 
         {/* Dates */}
-        <div className="flex justify-between items-center text-slate-300">
-          <span className="text-slate-400">Période</span>
-          <span className="font-semibold">
-            {formatDate(project.date_start)} → {formatDate(project.date_end)}
-          </span>
-        </div>
+        {!project.is_rd && (
+          <div className="flex justify-between items-center text-slate-300">
+            <span className="text-slate-400">Période</span>
+            <span className="font-semibold">
+              {formatDate(project.date_start)} → {formatDate(project.date_end)}
+            </span>
+          </div>
+        )}
 
         {/* Budget */}
-        <div className="flex justify-between items-center text-slate-300 pt-2 border-t border-slate-700/50">
-          <span className="text-slate-400">{project.is_opportunity ? 'Opportunité' : 'Budget'}</span>
-          <span className="font-bold text-blue-400">€{displayAmount.toFixed(2)}</span>
-        </div>
+        {!project.is_rd && (
+          <div className="flex justify-between items-center text-slate-300 pt-2 border-t border-slate-700/50">
+            <span className="text-slate-400">{project.is_opportunity ? 'Opportunité' : 'Budget'}</span>
+            <span className="font-bold">
+              {project.total_invoiced > 0 
+                ? <><span className="text-amber-400">{project.total_invoiced.toFixed(0)}</span> / <span className="text-blue-400">{displayAmount.toFixed(0)}</span> €</>
+                : <span className="text-blue-400">€{displayAmount.toFixed(2)}</span>
+              }
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )

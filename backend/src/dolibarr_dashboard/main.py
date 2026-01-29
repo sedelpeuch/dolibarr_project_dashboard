@@ -130,9 +130,26 @@ def get_dashboard():
                                 continue
                 except Exception as e:
                     logger.warning(
-                        f"Error fetching tasks for project {project_id}: {e}"
+                        f"Error fetching tasks for project {project_id}: {e}",
                     )
                     time_spent_total = 0.0
+
+                # Calculate total invoiced amount for project
+                invoiced_amount = 0.0
+                try:
+                    invoices = dolibarr.get_project_invoices(project_id)
+                    if invoices:
+                        for invoice in invoices:
+                            total_ttc = invoice.get("total_ttc", 0) or 0
+                            try:
+                                invoiced_amount += float(total_ttc)
+                            except (ValueError, TypeError):
+                                continue
+                except Exception as e:
+                    logger.warning(
+                        f"Error fetching invoices for project {project_id}: {e}",
+                    )
+                    invoiced_amount = 0.0
 
                 proj_enriched = {
                     "id": proj.get("id"),
@@ -144,7 +161,7 @@ def get_dashboard():
                     "date_start": proj.get("date_start"),
                     "date_end": proj.get("date_end"),
                     "budget_total": budget,
-                    "total_invoiced": 0,
+                    "total_invoiced": invoiced_amount,
                     "budget_remaining": budget,
                     "is_opportunity": is_opportunity,
                     "is_rd": is_rd,
