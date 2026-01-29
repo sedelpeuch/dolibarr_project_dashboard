@@ -42,8 +42,8 @@ dolibarr = DolibarrClient(
 )
 
 
-# Cache for thirdparty names (client_id -> name)
-_thirdparty_cache: dict[int, str] = {}
+# Cache for thirdparty data (client_id -> {name, code, address, zip, town, country_code})
+_thirdparty_cache: dict[int, dict] = {}
 
 
 def get_projects_config_path() -> Path:
@@ -60,14 +60,35 @@ def get_thirdparty_name(client_id: int) -> str:
         if client_id not in _thirdparty_cache:
             try:
                 thirdparty = dolibarr.get_thirdparty(int(client_id))
-                _thirdparty_cache[client_id] = thirdparty.get("name", str(client_id))
+                _thirdparty_cache[client_id] = {
+                    "name": thirdparty.get("name", str(client_id)),
+                    "code": thirdparty.get("code_client", ""),
+                    "address": thirdparty.get("address", ""),
+                    "zip": thirdparty.get("zip", ""),
+                    "town": thirdparty.get("town", ""),
+                    "country_code": thirdparty.get("country_code", ""),
+                }
             except Exception as e:
                 logger.warning(f"Failed to fetch thirdparty {client_id}: {e}")
-                _thirdparty_cache[client_id] = str(client_id)
+                _thirdparty_cache[client_id] = {
+                    "name": str(client_id),
+                    "code": "",
+                    "address": "",
+                    "zip": "",
+                    "town": "",
+                    "country_code": "",
+                }
 
         return _thirdparty_cache[client_id]
     except Exception:
-        return str(client_id)
+        return {
+            "name": str(client_id),
+            "code": "",
+            "address": "",
+            "zip": "",
+            "town": "",
+            "country_code": "",
+        }
 
 
 @app.get("/health")
@@ -108,7 +129,23 @@ def get_dashboard():
 
                 # Get client name with caching
                 client_id = proj.get("socid", "")
-                client_name = get_thirdparty_name(client_id) if client_id else "N/A"
+                client_data = (
+                    get_thirdparty_name(client_id)
+                    if client_id
+                    else {
+                        "name": "N/A",
+                        "code": "",
+                        "address": "",
+                        "zip": "",
+                        "town": "",
+                        "country_code": "",
+                    }
+                )
+                client_name = (
+                    client_data.get("name", "N/A")
+                    if isinstance(client_data, dict)
+                    else client_data
+                )
 
                 # Extract custom fields
                 array_options = proj.get("array_options", {}) or {}
@@ -149,8 +186,9 @@ def get_dashboard():
                     )
                     time_spent_total = 0.0
 
-                # Calculate total invoiced amount for project
+                # Calculate total invoiced amount and get invoice details
                 invoiced_amount = 0.0
+                invoices_data = []
                 try:
                     invoices = dolibarr.get_project_invoices(project_id)
                     if invoices:
@@ -158,6 +196,21 @@ def get_dashboard():
                             total_ttc = invoice.get("total_ttc", 0) or 0
                             try:
                                 invoiced_amount += float(total_ttc)
+                                # Store invoice details with ref and id for modal
+                                invoices_data.append(
+                                    {
+                                        "id": invoice.get("id"),
+                                        "ref": invoice.get("ref"),
+                                        "total": float(total_ttc),
+                                        "total_ht": float(
+                                            invoice.get("total_ht", 0) or 0,
+                                        ),
+                                        "date_validation": invoice.get(
+                                            "date_validation",
+                                        ),
+                                        "status": invoice.get("status"),
+                                    },
+                                )
                             except (ValueError, TypeError):
                                 continue
                 except Exception as e:
@@ -165,6 +218,65 @@ def get_dashboard():
                         f"Error fetching invoices for project {project_id}: {e}",
                     )
                     invoiced_amount = 0.0
+                    invoices_data = []
+
+                # Get proposal details
+                proposals_data = []
+                try:
+                    proposals = dolibarr.get_project_proposals(project_id)
+                    if proposals:
+                        for proposal in proposals:
+                            try:
+                                # Get lines details
+                                lines_total = 0.0
+                                lines_details = []
+                                proposal_lines = proposal.get("lines", [])
+                                if proposal_lines:
+                                    for line in proposal_lines:
+                                        line_total = float(
+                                            line.get("total_ttc", 0) or 0,
+                                        )
+                                        lines_total += line_total
+                                        lines_details.append(
+                                            {
+                                                "description": line.get(
+                                                    "description",
+                                                    "",
+                                                ),
+                                                "total": line_total,
+                                                "rang": line.get("rang", 1),
+                                            },
+                                        )
+
+                                proposals_data.append(
+                                    {
+                                        "id": proposal.get("id"),
+                                        "ref": proposal.get("ref"),
+                                        "total": float(
+                                            proposal.get("total_ttc", 0) or 0,
+                                        ),
+                                        "total_ht": float(
+                                            proposal.get("total_ht", 0) or 0,
+                                        ),
+                                        "date_creation": proposal.get("date_creation"),
+                                        "date_signature": proposal.get(
+                                            "date_signature"
+                                        ),
+                                        "delivery_date": proposal.get("delivery_date"),
+                                        "status": proposal.get("status"),
+                                        "cond_reglement_doc": proposal.get(
+                                            "cond_reglement_doc",
+                                        ),
+                                        "lines": lines_details,
+                                    },
+                                )
+                            except (ValueError, TypeError):
+                                continue
+                except Exception as e:
+                    logger.warning(
+                        f"Error fetching proposals for project {project_id}: {e}",
+                    )
+                    proposals_data = []
 
                 proj_enriched = {
                     "id": proj.get("id"),
@@ -172,6 +284,21 @@ def get_dashboard():
                     "title": proj.get("title"),
                     "client_id": client_id,
                     "client_name": client_name,
+                    "client_code": client_data.get("code", "")
+                    if isinstance(client_data, dict)
+                    else "",
+                    "client_address": client_data.get("address", "")
+                    if isinstance(client_data, dict)
+                    else "",
+                    "client_zip": client_data.get("zip", "")
+                    if isinstance(client_data, dict)
+                    else "",
+                    "client_town": client_data.get("town", "")
+                    if isinstance(client_data, dict)
+                    else "",
+                    "client_country_code": client_data.get("country_code", "")
+                    if isinstance(client_data, dict)
+                    else "",
                     "status": proj.get("status"),
                     "date_start": proj.get("date_start"),
                     "date_end": proj.get("date_end"),
@@ -188,6 +315,8 @@ def get_dashboard():
                     "opp_amount": opp_amount,
                     "opp_percent": opp_percent,
                     "time_spent_total": time_spent_total,
+                    "invoices": invoices_data,
+                    "proposals": proposals_data,
                 }
                 projects.append(proj_enriched)
 

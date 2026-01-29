@@ -5,6 +5,8 @@ import { ProjectsList } from './components/ProjectsList'
 import { LoadingSpinner } from './components/LoadingSpinner'
 import { ErrorMessage } from './components/ErrorMessage'
 import { ProjectsConfigModal } from './components/ProjectsConfigModal'
+import { ProjectDetailModal } from './components/ProjectDetailModal'
+import { Project } from './api'
 
 type TabType = 'projects' | 'opportunities' | 'rd'
 
@@ -13,6 +15,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('projects')
   const [showClosed, setShowClosed] = useState(false)
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
   if (loading) {
     return <LoadingSpinner message="Chargement du dashboard..." />
@@ -105,7 +109,13 @@ function App() {
         {activeTab === 'projects' && (
           <>
             {openProjects.length > 0 ? (
-              <ProjectsList projects={openProjects} />
+              <ProjectsList 
+                projects={openProjects}
+                onProjectClick={(proj) => {
+                  setSelectedProject(proj)
+                  setIsDetailModalOpen(true)
+                }}
+              />
             ) : (
               <div className="text-center py-16">
                 <p className="text-slate-400 text-lg">Aucun projet ouvert trouvé</p>
@@ -121,7 +131,15 @@ function App() {
                   {showClosed ? <ChevronUp size={22} className="text-blue-500" /> : <ChevronDown size={22} className="text-slate-600 group-hover:text-slate-500" />}
                   <span className="font-semibold text-lg">Projets clôturés ({closedProjects.length})</span>
                 </button>
-                {showClosed && <ProjectsList projects={closedProjects} />}
+                {showClosed && (
+                  <ProjectsList 
+                    projects={closedProjects}
+                    onProjectClick={(proj) => {
+                      setSelectedProject(proj)
+                      setIsDetailModalOpen(true)
+                    }}
+                  />
+                )}
               </div>
             )}
           </>
@@ -130,7 +148,13 @@ function App() {
         {activeTab === 'opportunities' && (
           <>
             {openOpportunities.length > 0 ? (
-              <ProjectsList projects={openOpportunities} />
+              <ProjectsList 
+                projects={openOpportunities}
+                onProjectClick={(proj) => {
+                  setSelectedProject(proj)
+                  setIsDetailModalOpen(true)
+                }}
+              />
             ) : (
               <div className="text-center py-16">
                 <p className="text-slate-400 text-lg">Aucune opportunité ouverte trouvée</p>
@@ -146,7 +170,15 @@ function App() {
                   {showClosed ? <ChevronUp size={22} className="text-blue-500" /> : <ChevronDown size={22} className="text-slate-600 group-hover:text-slate-500" />}
                   <span className="font-semibold text-lg">Opportunités clôturées ({closedOpportunities.length})</span>
                 </button>
-                {showClosed && <ProjectsList projects={closedOpportunities} />}
+                {showClosed && (
+                  <ProjectsList 
+                    projects={closedOpportunities}
+                    onProjectClick={(proj) => {
+                      setSelectedProject(proj)
+                      setIsDetailModalOpen(true)
+                    }}
+                  />
+                )}
               </div>
             )}
           </>
@@ -155,7 +187,13 @@ function App() {
         {activeTab === 'rd' && (
           <>
             {openRd.length > 0 ? (
-              <ProjectsList projects={openRd} />
+              <ProjectsList 
+                projects={openRd}
+                onProjectClick={(proj) => {
+                  setSelectedProject(proj)
+                  setIsDetailModalOpen(true)
+                }}
+              />
             ) : (
               <div className="text-center py-16">
                 <p className="text-slate-400 text-lg">Aucun projet RD ouvert trouvé</p>
@@ -171,7 +209,15 @@ function App() {
                   {showClosed ? <ChevronUp size={22} className="text-blue-500" /> : <ChevronDown size={22} className="text-slate-600 group-hover:text-slate-500" />}
                   <span className="font-semibold text-lg">Projets RD clôturés ({closedRd.length})</span>
                 </button>
-                {showClosed && <ProjectsList projects={closedRd} />}
+                {showClosed && (
+              <ProjectsList 
+                projects={closedRd}
+                onProjectClick={(proj) => {
+                  setSelectedProject(proj)
+                  setIsDetailModalOpen(true)
+                }}
+              />
+            )}
               </div>
             )}
           </>
@@ -182,6 +228,16 @@ function App() {
       <ProjectsConfigModal 
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
+      />
+
+      {/* Project Detail Modal */}
+      <ProjectDetailModal
+        project={selectedProject}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false)
+          setSelectedProject(null)
+        }}
       />
     </div>
   )

@@ -18,6 +18,44 @@ button {
   @apply transition-colors duration-200;
 }
 
+/* Prose styles for dark mode HTML content */
+.prose-invert {
+  @apply text-slate-300;
+}
+
+.prose-invert h1,
+.prose-invert h2,
+.prose-invert h3,
+.prose-invert h4,
+.prose-invert h5,
+.prose-invert h6 {
+  @apply text-slate-200 font-semibold;
+}
+
+.prose-invert p {
+  @apply mb-2;
+}
+
+.prose-invert strong {
+  @apply font-semibold text-slate-200;
+}
+
+.prose-invert em {
+  @apply italic;
+}
+
+.prose-invert ol,
+.prose-invert ul {
+  @apply ml-4 mb-2;
+}
+
+.prose-invert li {
+  @apply mb-1;
+}
+
+.prose-invert a {
+  @apply text-blue-400 hover:text-blue-300;
+}
 a {
   @apply text-blue-400 hover:text-blue-300 transition-colors;
 }

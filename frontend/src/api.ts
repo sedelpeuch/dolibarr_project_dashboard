@@ -8,12 +8,45 @@ const api: AxiosInstance = axios.create({
   },
 })
 
+export interface Invoice {
+  id: number
+  ref: string
+  total: number
+  total_ht: number
+  date_validation: number | null
+  status: string | number
+}
+
+export interface ProposalLine {
+  description: string
+  total: number
+  rang: number
+}
+
+export interface Proposal {
+  id: number
+  ref: string
+  total: number
+  total_ht: number
+  date_creation: number | null
+  date_signature: number | null
+  delivery_date: number | null
+  status: string | number
+  cond_reglement_doc: string
+  lines: ProposalLine[]
+}
+
 export interface Project {
   id: number
   ref: string
   title: string
   client_id: string
   client_name: string
+  client_code: string
+  client_address: string
+  client_zip: string
+  client_town: string
+  client_country_code: string
   status: string
   date_start: number
   date_end: number
@@ -30,6 +63,8 @@ export interface Project {
   opp_amount: number
   opp_percent: number
   time_spent_total: number
+  invoices: Invoice[]
+  proposals: Proposal[]
 }
 
 export interface DashboardData {

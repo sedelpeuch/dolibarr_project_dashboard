@@ -5,6 +5,7 @@ import { dolibarrLinks } from '../config'
 
 interface ProjectCardProps {
   project: Project
+  onDetailClick?: (project: Project) => void
 }
 
 const getUnitechBadge = (unittech: number): string => {
@@ -45,7 +46,7 @@ const formatAmount = (amount: number): string => {
   }).format(amount)
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDetailClick }) => {
   // Calculate amount to display based on project type
   const displayAmount = project.is_opportunity
     ? (project.opp_amount * project.opp_percent / 100)
@@ -54,7 +55,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const unittechs = getUnittechs(project.unittech)
 
   return (
-    <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
+    <div 
+      onClick={() => onDetailClick?.(project)}
+      className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer"
+    >
       {/* Header with title and badges */}
       <div className="mb-4">
         <div className="flex items-start justify-between mb-2 gap-3">

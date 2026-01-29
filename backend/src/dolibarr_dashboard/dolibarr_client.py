@@ -104,6 +104,19 @@ class DolibarrClient:
             },
         )
 
+    def get_project_proposals(self, project_id: int) -> list[dict[str, Any]]:
+        """Get all proposals for a specific project"""
+        return self._request(
+            "GET",
+            "/api/index.php/proposals",
+            params={
+                "sortfield": "t.rowid",
+                "sortorder": "ASC",
+                "limit": "100",
+                "sqlfilters": f"(fk_projet:=:{project_id})",
+            },
+        )
+
     # ========== THIRDPARTIES (CLIENTS) ==========
 
     def get_thirdparty(self, thirdparty_id: int) -> dict[str, Any]:

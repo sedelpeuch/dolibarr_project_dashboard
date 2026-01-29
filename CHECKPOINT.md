@@ -1,53 +1,124 @@
-# Dolibarr Dashboard - Checkpoint 1
+# Checkpoint - Balthazar v1.0
 
-## ✅ Completed: Clean, Professional Implementation
+## Date: 29 janvier 2026
 
-This checkpoint represents a stable, production-ready foundation for the project list feature.
+### ✅ Fonctionnalités Complétées
 
-### Feature: Project List Display
+#### Dashboard Principal
+- [x] Affichage de tous les projets avec pagination/filtrage
+- [x] Séparation Projets / Opportunités / RD
+- [x] Statut de chaque projet (Ouvert/Cloturé)
+- [x] Affichage du nom du client
+- [x] Badges unitechs (SIDO, SONU, HOMA)
+- [x] Titre clickable vers Dolibarr avec hover effect
 
-**Status**: ✅ Complete and working
+#### Métriques Projet
+- [x] Temps passé total (via tasks avec includetimespent=2)
+- [x] Jours planifiés (wp_days + rd_days)
+- [x] Montants facturés vs budget
+- [x] Dates début/fin (cachées pour RD)
+- [x] Affichage avec séparateurs de milliers (39 500 €)
 
-#### What It Does
-- Loads list of project IDs from `projects.json` (whitelist approach)
-- Fetches project details from Dolibarr API for each tracked project
-- Displays projects in a responsive grid with:
-  - Project name and reference
-  - Client name
-  - Budget total, invoiced amount, and remaining budget
-  - Deadline with urgent status indicator (red if < 7 days)
-  - Links to Dolibarr project page
-  - Budget overrun indicator (red when negative)
+#### Indicateurs de Données Manquantes
+- [x] "Aucun jour" en rouge si aucune donnée de jours (sauf pour opportunités)
+- [x] "Pas de deadline" en rouge si date_end = 0 (sauf pour opportunités)
+- [x] "Pas de budget" en rouge si montant = 0 (sauf pour opportunités)
+- [x] Les opportunités ne montrent pas ces avertissements (comportement normal)
+- [x] Les RD n'affichent pas budget/dates/client
 
-#### Architecture
+#### Gestion des Projets Configurés
+- [x] Modal "Gestion des projets" pour ajouter/retirer projets
+- [x] Recherche de projets dans Dolibarr par ID (`/api/search-project/{id}`)
+- [x] Affichage ref en gros, title en petit, ID avant le title
+- [x] Badge Ouvert/Cloturé pour chaque projet
+- [x] Tri: ouverts en premier, clôturés en dernier
+- [x] Bouton "Chercher" (pas d'auto-déclenchement)
+- [x] Suppression de projets de la liste
 
-**Backend** (`/backend/src/dolibarr_dashboard/`)
-- **main.py**: Single endpoint `/api/dashboard`
-  - Reads tracked projects from `settings.tracked_projects`
-  - Fetches each project via Dolibarr API
-  - Returns enriched project data with calculations
-  - Proper error handling and logging
+#### Backend
+- [x] Endpoint GET `/api/dashboard` - Tous les projets avec métriques
+- [x] Endpoint GET `/api/projects/{id}` - Détails projet
+- [x] Endpoint GET `/api/projects/{id}/tasks` - Tasks avec timespent
+- [x] Endpoint GET `/api/invoices` - Factures filtrées
+- [x] Endpoint GET `/api/projects-config` - Projets configurés avec statut
+- [x] Endpoint POST `/api/projects-config` - Sauvegarde liste de projets
+- [x] Endpoint GET `/api/search-project/{id}` - Cherche projet dans Dolibarr
+- [x] Intégration DolibarrClient pour fetch projets/tasks/invoices
+- [x] Logs httpx désactivés (WARNING level)
 
-- **dolibarr_client.py**: Minimal API client with single method
-  - `get_project_by_id(project_id)`: Fetches project details
-  - Clean HTTP wrapper with proper error handling
-  - No async code (sync httpx client)
+#### Frontend
+- [x] App.tsx - Header avec Balthazar (sans sous-titre), bouton Gérer
+- [x] ProjectCard - Affichage moderne avec toutes les infos
+- [x] ProjectsConfigModal - Gestion complète des projets
+- [x] Utilisation de axios avec api.ts (baseURL correctement configurée)
+- [x] Fonction formatAmount() pour montants avec séparateurs
 
-- **config.py**: Configuration management
-  - Loads environment variables from root `.env`
-  - Loads tracked projects from `projects.json`
-  - Type-safe settings with Pydantic
+#### UI/UX
+- [x] Titre "Balthazar" (pas "Dashboard Dolibarr")
+- [x] Pas de "Coordinateur de projets" en sous-titre
+- [x] Gradient header bleu/slate
+- [x] Modal bien intégrée (backdrop, styling, animations)
+- [x] Responsive design avec Tailwind
 
-**Frontend** (`/frontend/src/`)
-- **api.ts**: Type-safe API client
-  - `Project` interface matching backend response
-  - `DashboardData` interface with project array
-  - Single `getDashboard()` method
+### 📊 État Actuel
 
-- **App.tsx**: Main application shell
-  - Loads data with `useDashboard` hook
-  - Displays header with refresh button
-  - Shows project count
+**Projets Configurés**: 24 projets actifs
+- IDs: 1050, 1074, 1082, 1084, 1085, 1092, 1118, 1119, 266, 304, 642, 718, 835, 854, 899, 900, 902, 927, 951, 962, 963, 964, 973, 975
+
+**API Endpoints Actifs**:
+```
+GET  /api/dashboard              → Tous les projets avec métriques
+GET  /api/projects/{id}          → Détails d'un projet
+GET  /api/projects/{id}/tasks    → Tasks du projet
+GET  /api/invoices?sqlfilters... → Factures du projet
+GET  /api/projects-config        → Liste projets configurés
+POST /api/projects-config        → Sauvegarde liste projets
+GET  /api/search-project/{id}    → Cherche projet Dolibarr
+```
+
+**Frontend Routes**:
+```
+/                                 → Dashboard avec filtres (Projects/Opportunities/RD)
+```
+
+### 🔄 Flux Utilisateur
+
+1. **Accueil**: Voir tous les projets du dashboard
+2. **Filters**: Tabs pour Projects/Opportunities/RD
+3. **Project Details**: Clic sur titre → Dolibarr
+4. **Manage Projects**: Bouton "Gérer" → Modal
+   - Voir liste des projets (tri: ouvert/fermé)
+   - Chercher nouveau projet par ID
+   - Ajouter/Supprimer projets
+
+### 🚀 Technologies
+
+- **Backend**: FastAPI, httpx, Pydantic, Python 3.11+
+- **Frontend**: React 18.2+, TypeScript, Vite, Tailwind CSS, lucide-react, axios
+- **API Externe**: Dolibarr (gaaspard.catie.fr)
+- **Data**: projects.json (whitelist)
+
+### 📝 Notes Techniques
+
+- Path projects.json: `/home/sedelpeuch/PERSO-SDE/balthazar/backend/projects.json`
+- Backend port: 41587
+- Frontend dev port: 5173
+- API baseURL: `http://localhost:41587/api`
+- Statut projet: 2 = Cloturé, autres = Ouvert
+
+### ⏭️ Prochaines Étapes Possibles
+
+- [ ] Détail page pour chaque projet (tasks, invoices détaillés)
+- [ ] Planification vs Actuel (comparaison jours)
+- [ ] Export/Rapport des projets
+- [ ] Historique des modifications
+- [ ] Alertes pour data manquantes
+- [ ] Recherche/Filtres avancés
+- [ ] Dark/Light mode toggle
+
+---
+
+**Status**: ✅ Stable - Prêt pour utilisation
   - Loading and error states
 
 - **hooks/useDashboard.ts**: Data fetching hook
