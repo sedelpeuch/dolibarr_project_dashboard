@@ -35,6 +35,26 @@ dolibarr = DolibarrClient(
 )
 
 
+# Cache for thirdparty names (client_id -> name)
+_thirdparty_cache: dict[int, str] = {}
+
+
+def get_thirdparty_name(client_id: int) -> str:
+    """Get thirdparty name with caching"""
+    try:
+        if client_id not in _thirdparty_cache:
+            try:
+                thirdparty = dolibarr.get_thirdparty(int(client_id))
+                _thirdparty_cache[client_id] = thirdparty.get("name", str(client_id))
+            except Exception as e:
+                logger.warning(f"Failed to fetch thirdparty {client_id}: {e}")
+                _thirdparty_cache[client_id] = str(client_id)
+
+        return _thirdparty_cache[client_id]
+    except Exception:
+        return str(client_id)
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
@@ -71,18 +91,52 @@ def get_dashboard():
                 is_opportunity = ref.startswith("OPP-") if ref else False
                 is_rd = ref.startswith("RD-") if ref else False
 
+                # Get client name with caching
+                client_id = proj.get("socid", "")
+                client_name = get_thirdparty_name(client_id) if client_id else "N/A"
+
+                # Extract custom fields
+                array_options = proj.get("array_options", {}) or {}
+
+                # Parse unittech - can be comma-separated values like '3,1'
+                unittech_str = array_options.get("options_unittech", "") or ""
+                unittech = []
+                if unittech_str:
+                    try:
+                        unittech = [
+                            int(val.strip()) for val in str(unittech_str).split(",")
+                        ]
+                    except (ValueError, AttributeError):
+                        unittech = []
+
+                wp_days = float(array_options.get("options_wp_days", 0) or 0)
+                rd_days = float(array_options.get("options_rd_days", 0) or 0)
+
+                # Budget amounts
+                budget_amount = float(proj.get("budget_amount", 0) or 0)
+                opp_amount = float(proj.get("opp_amount", 0) or 0)
+                opp_percent = float(proj.get("opp_percent", 0) or 0)
+
                 proj_enriched = {
                     "id": proj.get("id"),
                     "ref": ref,
                     "title": proj.get("title"),
-                    "client_name": proj.get("socid", ""),
+                    "client_id": client_id,
+                    "client_name": client_name,
                     "status": proj.get("status"),
-                    "deadline": proj.get("date_end"),
+                    "date_end": proj.get("date_end"),
                     "budget_total": budget,
                     "total_invoiced": 0,
                     "budget_remaining": budget,
                     "is_opportunity": is_opportunity,
                     "is_rd": is_rd,
+                    "description": proj.get("description", ""),
+                    "unittech": unittech,
+                    "wp_days": wp_days,
+                    "rd_days": rd_days,
+                    "budget_amount": budget_amount,
+                    "opp_amount": opp_amount,
+                    "opp_percent": opp_percent,
                 }
                 projects.append(proj_enriched)
 

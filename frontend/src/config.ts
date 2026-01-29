@@ -10,4 +10,5 @@ export const dolibarrLinks = {
   contact: (id: number) => `${DOLIBARR_URL}/contact/card.php?id=${id}`,
   user: (id: number) => `${DOLIBARR_URL}/user/card.php?id=${id}`,
   company: (id: number) => `${DOLIBARR_URL}/societe/card.php?socid=${id}`,
+  thirdparty: (id: string | number) => `${DOLIBARR_URL}/societe/project.php?socid=${id}`,
 }

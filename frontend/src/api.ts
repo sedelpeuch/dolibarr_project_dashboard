@@ -12,14 +12,22 @@ export interface Project {
   id: number
   ref: string
   title: string
+  client_id: string
   client_name: string
   status: string
-  deadline: string | null
+  date_end: number
   budget_total: number
   total_invoiced: number
   budget_remaining: number
   is_opportunity: boolean
   is_rd: boolean
+  description: string
+  unittech: number[]
+  wp_days: number
+  rd_days: number
+  budget_amount: number
+  opp_amount: number
+  opp_percent: number
 }
 
 export interface DashboardData {

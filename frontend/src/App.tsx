@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { useState } from 'react'
+import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useDashboard } from './hooks/useDashboard'
 import { ProjectsList } from './components/ProjectsList'
 import { LoadingSpinner } from './components/LoadingSpinner'
@@ -10,6 +10,7 @@ type TabType = 'projects' | 'opportunities' | 'rd'
 function App() {
   const { data, loading, error, refetch } = useDashboard()
   const [activeTab, setActiveTab] = useState<TabType>('projects')
+  const [showClosed, setShowClosed] = useState(false)
 
   if (loading) {
     return <LoadingSpinner message="Chargement du dashboard..." />
@@ -22,6 +23,15 @@ function App() {
   const projects = data?.projects.filter(p => !p.is_opportunity && !p.is_rd) || []
   const opportunities = data?.projects.filter(p => p.is_opportunity) || []
   const rd = data?.projects.filter(p => p.is_rd) || []
+
+  const openProjects = projects.filter(p => p.status !== '2')
+  const closedProjects = projects.filter(p => p.status === '2')
+  
+  const openOpportunities = opportunities.filter(p => p.status !== '2')
+  const closedOpportunities = opportunities.filter(p => p.status === '2')
+  
+  const openRd = rd.filter(p => p.status !== '2')
+  const closedRd = rd.filter(p => p.status === '2')
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -83,11 +93,24 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {activeTab === 'projects' && (
           <>
-            {projects.length > 0 ? (
-              <ProjectsList projects={projects} />
+            {openProjects.length > 0 ? (
+              <ProjectsList projects={openProjects} />
             ) : (
               <div className="text-center py-12">
-                <p className="text-slate-400">Aucun projet trouvé</p>
+                <p className="text-slate-400">Aucun projet ouvert trouvé</p>
+              </div>
+            )}
+            
+            {closedProjects.length > 0 && (
+              <div className="mt-8 border-t border-slate-700 pt-8">
+                <button
+                  onClick={() => setShowClosed(!showClosed)}
+                  className="flex items-center gap-2 text-slate-400 hover:text-slate-300 mb-4"
+                >
+                  {showClosed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  <span className="font-medium">Projets clôturés ({closedProjects.length})</span>
+                </button>
+                {showClosed && <ProjectsList projects={closedProjects} />}
               </div>
             )}
           </>
@@ -95,11 +118,24 @@ function App() {
 
         {activeTab === 'opportunities' && (
           <>
-            {opportunities.length > 0 ? (
-              <ProjectsList projects={opportunities} />
+            {openOpportunities.length > 0 ? (
+              <ProjectsList projects={openOpportunities} />
             ) : (
               <div className="text-center py-12">
-                <p className="text-slate-400">Aucune opportunité trouvée</p>
+                <p className="text-slate-400">Aucune opportunité ouverte trouvée</p>
+              </div>
+            )}
+            
+            {closedOpportunities.length > 0 && (
+              <div className="mt-8 border-t border-slate-700 pt-8">
+                <button
+                  onClick={() => setShowClosed(!showClosed)}
+                  className="flex items-center gap-2 text-slate-400 hover:text-slate-300 mb-4"
+                >
+                  {showClosed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  <span className="font-medium">Opportunités clôturées ({closedOpportunities.length})</span>
+                </button>
+                {showClosed && <ProjectsList projects={closedOpportunities} />}
               </div>
             )}
           </>
@@ -107,11 +143,24 @@ function App() {
 
         {activeTab === 'rd' && (
           <>
-            {rd.length > 0 ? (
-              <ProjectsList projects={rd} />
+            {openRd.length > 0 ? (
+              <ProjectsList projects={openRd} />
             ) : (
               <div className="text-center py-12">
-                <p className="text-slate-400">Aucun projet RD trouvé</p>
+                <p className="text-slate-400">Aucun projet RD ouvert trouvé</p>
+              </div>
+            )}
+            
+            {closedRd.length > 0 && (
+              <div className="mt-8 border-t border-slate-700 pt-8">
+                <button
+                  onClick={() => setShowClosed(!showClosed)}
+                  className="flex items-center gap-2 text-slate-400 hover:text-slate-300 mb-4"
+                >
+                  {showClosed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  <span className="font-medium">Projets RD clôturés ({closedRd.length})</span>
+                </button>
+                {showClosed && <ProjectsList projects={closedRd} />}
               </div>
             )}
           </>

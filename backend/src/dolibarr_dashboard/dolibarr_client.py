@@ -83,6 +83,15 @@ class DolibarrClient:
             f"/api/index.php/projects/{project_id}",
         )
 
+    # ========== THIRDPARTIES (CLIENTS) ==========
+
+    def get_thirdparty(self, thirdparty_id: int) -> dict[str, Any]:
+        """Get thirdparty (client/company) details"""
+        return self._request(
+            "GET",
+            f"/api/index.php/thirdparties/{thirdparty_id}",
+        )
+
     def __del__(self):
         """Cleanup: close the client"""
         self.client.close()
