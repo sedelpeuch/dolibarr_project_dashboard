@@ -18,6 +18,8 @@ export interface Project {
   budget_total: number
   total_invoiced: number
   budget_remaining: number
+  is_opportunity: boolean
+  is_rd: boolean
 }
 
 export interface DashboardData {

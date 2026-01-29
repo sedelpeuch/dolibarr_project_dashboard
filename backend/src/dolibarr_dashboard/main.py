@@ -66,9 +66,14 @@ def get_dashboard():
                 # Convert budget to float, handling string values
                 budget = float(proj.get("budget", 0) or 0)
 
+                # Determine classification based on ref prefix
+                ref = proj.get("ref", "")
+                is_opportunity = ref.startswith("OPP-") if ref else False
+                is_rd = ref.startswith("RD-") if ref else False
+
                 proj_enriched = {
                     "id": proj.get("id"),
-                    "ref": proj.get("ref"),
+                    "ref": ref,
                     "title": proj.get("title"),
                     "client_name": proj.get("socid", ""),
                     "status": proj.get("status"),
@@ -76,6 +81,8 @@ def get_dashboard():
                     "budget_total": budget,
                     "total_invoiced": 0,
                     "budget_remaining": budget,
+                    "is_opportunity": is_opportunity,
+                    "is_rd": is_rd,
                 }
                 projects.append(proj_enriched)
 
