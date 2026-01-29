@@ -38,6 +38,13 @@ const formatDate = (timestamp: number): string => {
   return new Date(timestamp * 1000).toLocaleDateString('fr-FR')
 }
 
+const formatAmount = (amount: number): string => {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   // Calculate amount to display based on project type
   const displayAmount = project.is_opportunity
@@ -55,11 +62,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
             href={dolibarrLinks.project(project.id)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 flex-1 min-w-0 hover:text-blue-300 transition-colors group"
+            className="flex items-start gap-2 flex-1 min-w-0 hover:text-blue-300 transition-colors group"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold text-slate-100 whitespace-nowrap flex-1 min-w-0">{project.title}</h3>
-            <ExternalLink size={14} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <h3 className="text-base font-bold text-slate-100">{project.title}</h3>
+            <ExternalLink size={14} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
           </a>
 
           {/* Badges - right aligned */}
@@ -103,8 +110,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                 {(project.wp_days + project.rd_days).toFixed(1)}
               </span>
             )}
-            {project.wp_days === 0 && project.rd_days === 0 && project.time_spent_total === 0 && (
-              <span className="text-slate-500">-</span>
+            {project.wp_days === 0 && project.rd_days === 0 && project.time_spent_total === 0 && !project.is_opportunity && (
+              <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded font-semibold">Aucun jour</span>
             )}
           </div>
         </div>
@@ -113,9 +120,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         {!project.is_rd && (
           <div className="flex justify-between items-center text-slate-300">
             <span className="text-slate-400">Période</span>
-            <span className="font-semibold">
-              {formatDate(project.date_start)} → {formatDate(project.date_end)}
-            </span>
+            {(project.date_end === 0 || !project.date_end) && !project.is_opportunity ? (
+              <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded font-semibold">Pas de deadline</span>
+            ) : (
+              <span className="font-semibold">
+                {formatDate(project.date_start)} → {formatDate(project.date_end)}
+              </span>
+            )}
           </div>
         )}
 
@@ -123,12 +134,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         {!project.is_rd && (
           <div className="flex justify-between items-center text-slate-300 pt-2 border-t border-slate-700/50">
             <span className="text-slate-400">{project.is_opportunity ? 'Opportunité' : 'Budget'}</span>
-            <span className="font-bold">
-              {project.total_invoiced > 0 
-                ? <><span className="text-amber-400">{project.total_invoiced.toFixed(0)}</span> / <span className="text-blue-400">{displayAmount.toFixed(0)}</span> €</>
-                : <span className="text-blue-400">€{displayAmount.toFixed(2)}</span>
-              }
-            </span>
+            {displayAmount === 0 && project.total_invoiced === 0 && !project.is_opportunity ? (
+              <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded font-semibold">Pas de budget</span>
+            ) : (
+              <span className="font-bold">
+                {project.total_invoiced > 0 
+                  ? <><span className="text-amber-400">{formatAmount(project.total_invoiced)}</span> / <span className="text-blue-400">{formatAmount(displayAmount)}</span> €</>
+                  : <span className="text-blue-400">{formatAmount(displayAmount)} €</span>
+                }
+              </span>
+            )}
           </div>
         )}
       </div>

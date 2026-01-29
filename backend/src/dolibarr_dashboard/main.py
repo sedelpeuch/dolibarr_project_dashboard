@@ -1,9 +1,13 @@
 """Main FastAPI Application"""
 
+import json
 import logging
+from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from dolibarr_dashboard.config import settings
 from dolibarr_dashboard.dolibarr_client import DolibarrClient
@@ -11,6 +15,9 @@ from dolibarr_dashboard.dolibarr_client import DolibarrClient
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Disable verbose httpx logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -37,6 +44,14 @@ dolibarr = DolibarrClient(
 
 # Cache for thirdparty names (client_id -> name)
 _thirdparty_cache: dict[int, str] = {}
+
+
+def get_projects_config_path() -> Path:
+    """Get the path to projects.json"""
+    # Path to the backend root directory
+    backend_root = Path(__file__).parent.parent.parent
+    config_file = backend_root / "projects.json"
+    return config_file
 
 
 def get_thirdparty_name(client_id: int) -> str:
@@ -186,6 +201,117 @@ def get_dashboard():
 
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== PROJECT CONFIG MANAGEMENT ==========
+
+
+class ProjectConfigRequest(BaseModel):
+    """Request body for updating projects config"""
+
+    projects: list[int]
+
+
+class ProjectInfo(BaseModel):
+    """Project info with name"""
+
+    id: int
+    title: str
+    ref: str
+
+
+@app.get("/api/projects-config")
+def get_projects_config():
+    """Get current projects configuration with names"""
+    try:
+        config_path = get_projects_config_path()
+
+        if not config_path.exists():
+            logger.error(f"Config file not found at {config_path}")
+            return {"projects": []}
+
+        with open(config_path) as f:
+            config = json.load(f)
+
+        project_ids = config.get("projects", [])
+
+        projects_with_names: list[dict[str, Any]] = []
+
+        for project_id in project_ids:
+            try:
+                proj = dolibarr.get_project_by_id(project_id)
+                projects_with_names.append(
+                    {
+                        "id": proj.get("id"),
+                        "title": proj.get("title"),
+                        "ref": proj.get("ref"),
+                        "status": proj.get("status"),
+                    },
+                )
+            except Exception as e:
+                logger.warning(f"Failed to fetch project {project_id}: {e}")
+                # Still add the project even if we can't fetch details
+                projects_with_names.append(
+                    {
+                        "id": project_id,
+                        "title": "Unknown",
+                        "ref": "Unknown",
+                        "status": None,
+                    },
+                )
+
+        return {
+            "projects": projects_with_names,
+        }
+    except Exception as e:
+        logger.error(f"Error reading projects config: {e}")
+        return {"projects": []}
+
+
+@app.post("/api/projects-config")
+def update_projects_config(request: ProjectConfigRequest):
+    """Update projects configuration"""
+    try:
+        config_path = get_projects_config_path()
+
+        config = {
+            "projects": request.projects,
+            "description": "Liste des projets à suivre dans le dashboard",
+        }
+
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+
+        logger.info(f"Updated projects config with {len(request.projects)} projects")
+
+        return {
+            "success": True,
+            "projects": request.projects,
+        }
+    except Exception as e:
+        logger.error(f"Error updating projects config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/search-project/{project_id}")
+def search_project(project_id: int):
+    """Search for a project in Dolibarr by ID"""
+    try:
+        proj = dolibarr.get_project_by_id(project_id)
+        if not proj:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        return {
+            "id": proj.get("id"),
+            "title": proj.get("title"),
+            "ref": proj.get("ref"),
+            "status": proj.get("status"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error searching project {project_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
+import { RefreshCw, ChevronDown, ChevronUp, Settings } from 'lucide-react'
 import { useDashboard } from './hooks/useDashboard'
 import { ProjectsList } from './components/ProjectsList'
 import { LoadingSpinner } from './components/LoadingSpinner'
 import { ErrorMessage } from './components/ErrorMessage'
+import { ProjectsConfigModal } from './components/ProjectsConfigModal'
 
 type TabType = 'projects' | 'opportunities' | 'rd'
 
@@ -11,6 +12,7 @@ function App() {
   const { data, loading, error, refetch } = useDashboard()
   const [activeTab, setActiveTab] = useState<TabType>('projects')
   const [showClosed, setShowClosed] = useState(false)
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
 
   if (loading) {
     return <LoadingSpinner message="Chargement du dashboard..." />
@@ -39,17 +41,26 @@ function App() {
       <header className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 sticky top-0 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Dashboard Dolibarr</h1>
-            <p className="text-sm text-slate-400 mt-1">Coordinateur de projets</p>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Balthazar</h1>
           </div>
-          <button
-            onClick={refetch}
-            disabled={loading}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
-          >
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            Rafraîchir
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsConfigModalOpen(true)}
+              className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200"
+              title="Gérer les projets"
+            >
+              <Settings size={18} />
+              Gérer
+            </button>
+            <button
+              onClick={refetch}
+              disabled={loading}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-blue-500/20"
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+              Rafraîchir
+            </button>
+          </div>
         </div>
       </header>
 
@@ -166,6 +177,12 @@ function App() {
           </>
         )}
       </main>
+
+      {/* Projects Config Modal */}
+      <ProjectsConfigModal 
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+      />
     </div>
   )
 }
