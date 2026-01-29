@@ -29,6 +29,7 @@ export interface Project {
   budget_amount: number
   opp_amount: number
   opp_percent: number
+  time_spent_total: number
 }
 
 export interface DashboardData {

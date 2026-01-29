@@ -117,6 +117,23 @@ def get_dashboard():
                 opp_amount = float(proj.get("opp_amount", 0) or 0)
                 opp_percent = float(proj.get("opp_percent", 0) or 0)
 
+                # Calculate total time spent on project
+                time_spent_total = 0.0
+                try:
+                    tasks = dolibarr.get_project_tasks(project_id)
+                    if tasks:
+                        for task in tasks:
+                            duration_effective = task.get("duration_effective", 0) or 0
+                            try:
+                                time_spent_total += float(duration_effective)
+                            except (ValueError, TypeError):
+                                continue
+                except Exception as e:
+                    logger.warning(
+                        f"Error fetching tasks for project {project_id}: {e}"
+                    )
+                    time_spent_total = 0.0
+
                 proj_enriched = {
                     "id": proj.get("id"),
                     "ref": ref,
@@ -138,6 +155,7 @@ def get_dashboard():
                     "budget_amount": budget_amount,
                     "opp_amount": opp_amount,
                     "opp_percent": opp_percent,
+                    "time_spent_total": time_spent_total,
                 }
                 projects.append(proj_enriched)
 

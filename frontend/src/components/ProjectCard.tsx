@@ -92,17 +92,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         <div className="flex justify-between items-center">
           <span className="text-slate-400">Jours</span>
           <div className="flex gap-2">
-            {project.wp_days > 0 && (
+            {project.time_spent_total > 0 && (
+              <span className="bg-amber-500/20 text-amber-300 px-2 py-1 rounded font-semibold">
+                {project.time_spent_total.toFixed(1)}⏱
+              </span>
+            )}
+            {(project.wp_days + project.rd_days) > 0 && (
               <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-semibold">
-                {project.wp_days.toFixed(1)}
+                {(project.wp_days + project.rd_days).toFixed(1)}
               </span>
             )}
-            {project.rd_days > 0 && (
-              <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-semibold">
-                {project.rd_days.toFixed(1)}
-              </span>
-            )}
-            {project.wp_days === 0 && project.rd_days === 0 && (
+            {project.wp_days === 0 && project.rd_days === 0 && project.time_spent_total === 0 && (
               <span className="text-slate-500">-</span>
             )}
           </div>

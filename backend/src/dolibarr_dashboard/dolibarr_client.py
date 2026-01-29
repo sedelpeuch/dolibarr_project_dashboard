@@ -83,6 +83,14 @@ class DolibarrClient:
             f"/api/index.php/projects/{project_id}",
         )
 
+    def get_project_tasks(self, project_id: int) -> list[dict[str, Any]]:
+        """Get all tasks for a project with timespent data"""
+        return self._request(
+            "GET",
+            f"/api/index.php/projects/{project_id}/tasks",
+            params={"includetimespent": "2"},
+        )
+
     # ========== THIRDPARTIES (CLIENTS) ==========
 
     def get_thirdparty(self, thirdparty_id: int) -> dict[str, Any]:
