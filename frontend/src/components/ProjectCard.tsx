@@ -93,6 +93,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDetailClick
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-blue-400 hover:text-blue-300 hover:underline block mb-4 font-medium transition-colors"
+          onClick={(e) => e.stopPropagation()}
         >
           {project.client_name || 'N/A'}
         </a>

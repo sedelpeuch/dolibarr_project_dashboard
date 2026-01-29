@@ -169,15 +169,47 @@ def get_dashboard():
                 opp_amount = float(proj.get("opp_amount", 0) or 0)
                 opp_percent = float(proj.get("opp_percent", 0) or 0)
 
-                # Calculate total time spent on project
+                # Calculate total time spent on project and get task details
                 time_spent_total = 0.0
+                tasks_data = []
                 try:
-                    tasks = dolibarr.get_project_tasks(project_id)
+                    tasks_response = dolibarr.get_project_tasks(project_id)
+
+                    # Handle different response formats
+                    tasks = []
+                    if isinstance(tasks_response, list):
+                        tasks = tasks_response
+                    elif isinstance(tasks_response, dict):
+                        # If it's a dict, check for common wrapper keys
+                        if "data" in tasks_response:
+                            tasks = tasks_response["data"]
+                            if isinstance(tasks, dict):
+                                tasks = list(tasks.values())
+                        else:
+                            # Assume the dict values are tasks
+                            tasks = list(tasks_response.values())
+
                     if tasks:
                         for task in tasks:
+                            if not isinstance(task, dict):
+                                continue
                             duration_effective = task.get("duration_effective", 0) or 0
                             try:
-                                time_spent_total += float(duration_effective)
+                                duration_float = float(duration_effective)
+                                time_spent_total += duration_float
+                                # Store task details - use int() to ensure it's an integer
+                                task_id = task.get("id") or task.get("rowid")
+                                tasks_data.append(
+                                    {
+                                        "id": int(task_id) if task_id else None,
+                                        "ref": task.get("ref", ""),
+                                        "label": task.get("label", ""),
+                                        "duration_effective": duration_float,
+                                        "planned_workload": float(
+                                            task.get("planned_workload", 0) or 0
+                                        ),
+                                    }
+                                )
                             except (ValueError, TypeError):
                                 continue
                 except Exception as e:
@@ -185,6 +217,43 @@ def get_dashboard():
                         f"Error fetching tasks for project {project_id}: {e}",
                     )
                     time_spent_total = 0.0
+                    tasks_data = []
+
+                # Extract timespent by user from tasks
+                timespent_by_user_dict = {}
+                try:
+                    if tasks:
+                        for task in tasks:
+                            if not isinstance(task, dict):
+                                continue
+                            # Check for timespent lines in the task
+                            lines = task.get("lines", [])
+                            if isinstance(lines, list):
+                                for line in lines:
+                                    if not isinstance(line, dict):
+                                        continue
+                                    user_id = line.get("timespent_line_fk_user")
+                                    duration = line.get("timespent_line_duration", 0)
+                                    if user_id:
+                                        try:
+                                            duration_float = (
+                                                float(duration) if duration else 0.0
+                                            )
+                                            if user_id not in timespent_by_user_dict:
+                                                timespent_by_user_dict[user_id] = {
+                                                    "user_id": int(user_id),
+                                                    "user_name": f"User {user_id}",
+                                                    "total_duration": 0.0,
+                                                }
+                                            timespent_by_user_dict[user_id][
+                                                "total_duration"
+                                            ] += duration_float
+                                        except (ValueError, TypeError):
+                                            continue
+                except Exception as e:
+                    logger.warning(f"Error extracting timespent by user: {e}")
+
+                timespent_by_user = list(timespent_by_user_dict.values())
 
                 # Calculate total invoiced amount and get invoice details
                 invoiced_amount = 0.0
@@ -260,7 +329,7 @@ def get_dashboard():
                                         ),
                                         "date_creation": proposal.get("date_creation"),
                                         "date_signature": proposal.get(
-                                            "date_signature"
+                                            "date_signature",
                                         ),
                                         "delivery_date": proposal.get("delivery_date"),
                                         "status": proposal.get("status"),
@@ -317,6 +386,8 @@ def get_dashboard():
                     "time_spent_total": time_spent_total,
                     "invoices": invoices_data,
                     "proposals": proposals_data,
+                    "tasks": tasks_data,
+                    "timespent_by_user": timespent_by_user,
                 }
                 projects.append(proj_enriched)
 

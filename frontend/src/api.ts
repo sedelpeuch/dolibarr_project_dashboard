@@ -23,6 +23,20 @@ export interface ProposalLine {
   rang: number
 }
 
+export interface Task {
+  id: number
+  ref: string
+  label: string
+  duration_effective: number
+  planned_workload: number
+}
+
+export interface TimespentByUser {
+  user_id: number
+  user_name: string
+  total_duration: number
+}
+
 export interface Proposal {
   id: number
   ref: string
@@ -65,6 +79,8 @@ export interface Project {
   time_spent_total: number
   invoices: Invoice[]
   proposals: Proposal[]
+  tasks: Task[]
+  timespent_by_user: TimespentByUser[]
 }
 
 export interface DashboardData {

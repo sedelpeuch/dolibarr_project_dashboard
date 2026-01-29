@@ -193,6 +193,15 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               <span className={`text-xs px-3 py-1 rounded font-medium whitespace-nowrap ${statusBadge.color}`}>
                 {statusBadge.text}
               </span>
+              <a
+                href={`https://gaaspard.catie.fr/projet/card.php?id=${project.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-slate-200 transition-colors"
+                title="Ouvrir dans Dolibarr"
+              >
+                <ExternalLink size={20} />
+              </a>
               <button
                 onClick={onClose}
                 className="text-slate-400 hover:text-slate-200 transition-colors"
@@ -222,7 +231,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               <div className="border-t border-slate-700/50 pt-6">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <a
-                    href={dolibarrLinks.thirdparty(project.client_id)}
+                    href={dolibarrLinks.project(project.id)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors flex-1 min-w-0"
@@ -306,28 +315,28 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
             {/* Budget */}
             {!project.is_rd && (
-              <div className="border-t border-slate-700/50 pt-6">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">
+              <div className="border-t border-slate-700/50 pt-4">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">
                   {project.is_opportunity ? 'Opportunité' : 'Budget'}
                 </p>
                 {displayAmount === 0 && project.total_invoiced === 0 ? (
-                  <p className="text-lg font-semibold text-red-400">Pas de budget</p>
+                  <p className="text-sm font-semibold text-red-400">Pas de budget</p>
                 ) : (
                   <div>
-                    <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div className="grid grid-cols-2 gap-2 mb-2">
                       {project.total_invoiced > 0 && (
                         <div>
-                          <p className="text-xs text-slate-400 mb-1">Facturé</p>
-                          <p className="text-lg font-semibold text-amber-400">
+                          <p className="text-xs text-slate-400">Facturé</p>
+                          <p className="text-base font-semibold text-amber-400">
                             {formatAmount(project.total_invoiced)} €
                           </p>
                         </div>
                       )}
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">
+                        <p className="text-xs text-slate-400">
                           {project.is_opportunity ? 'Montant' : 'Budget'}
                         </p>
-                        <p className="text-lg font-semibold text-blue-400">
+                        <p className="text-base font-semibold text-blue-400">
                           {formatAmount(displayAmount)} €
                         </p>
                       </div>
@@ -335,7 +344,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
                     {/* Progress bar */}
                     {project.total_invoiced > 0 && displayAmount > 0 && (
-                      <div className="mb-4">
+                      <div className="mb-3">
                         {(() => {
                           const progress = Math.min(100, (project.total_invoiced / displayAmount) * 100)
                           const isOverBudget = project.total_invoiced > displayAmount
@@ -346,7 +355,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                                 <span className="text-slate-400">{progress.toFixed(0)}%</span>
                                 {isOverBudget && <span className="text-red-400 font-semibold">Dépassé</span>}
                               </div>
-                              <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all ${
                                     isOverBudget
@@ -366,37 +375,37 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
                     {/* Proposals */}
                     {project.proposals && project.proposals.length > 0 && (
-                      <div className="mt-4 pt-4 space-y-2">
+                      <div className="mt-2 pt-2 space-y-1">
                         {project.proposals.map((proposal) => {
                           const statusBadge = getProposalStatusBadge(proposal.status)
                           return (
                             <div
                               key={proposal.id}
-                              className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded p-3 transition-colors group"
+                              className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded p-2 transition-colors group"
                             >
-                              <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center justify-between gap-2 mb-1">
                                 <a
                                   href={dolibarrLinks.proposal(proposal.id)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2"
+                                  className="font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-sm"
                                 >
                                   {proposal.ref}
-                                  <ExternalLink size={14} />
+                                  <ExternalLink size={12} />
                                 </a>
-                                <span className={`text-xs px-2 py-0.5 rounded font-medium ${statusBadge.color}`}>
+                                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${statusBadge.color}`}>
                                   {statusBadge.text}
                                 </span>
                               </div>
                               
                               {proposal.date_creation && (
-                                <p className="text-xs text-slate-400 mb-2">
+                                <p className="text-xs text-slate-400 mb-1">
                                   {formatDate(proposal.date_creation)}
                                 </p>
                               )}
                               
                               {proposal.lines && proposal.lines.length > 0 && (
-                                <div className="text-xs text-slate-400 space-y-1 mb-3">
+                                <div className="text-xs text-slate-400 space-y-0.5 mb-2">
                                   {proposal.lines.map((line, idx) => {
                                     const lineKey = `${proposal.id}-${idx}`
                                     const isExpanded = expandedLines.has(lineKey)
@@ -404,14 +413,14 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                                       <button
                                         key={idx}
                                         onClick={() => toggleLineExpanded(proposal.id, idx)}
-                                        className="w-full text-left bg-slate-700/30 hover:bg-slate-700/50 border border-slate-700 rounded p-2 transition-colors"
+                                        className="w-full text-left bg-slate-700/30 hover:bg-slate-700/50 border border-slate-700 rounded p-1 transition-colors"
                                       >
                                         <div className="flex justify-between gap-2 items-start">
-                                          <span className="text-slate-400 font-medium">Ligne {line.rang}</span>
-                                          <span className="flex-shrink-0 font-medium text-slate-300">{formatAmount(line.total)} €</span>
+                                          <span className="text-slate-400 font-medium text-xs">Ligne {line.rang}</span>
+                                          <span className="flex-shrink-0 font-medium text-slate-300 text-xs">{formatAmount(line.total)} €</span>
                                         </div>
                                         {isExpanded && (
-                                          <div className="mt-2 pt-2 border-t border-slate-600">
+                                          <div className="mt-1 pt-1 border-t border-slate-600">
                                             <div 
                                               className="prose prose-sm prose-invert max-w-none text-slate-300"
                                               dangerouslySetInnerHTML={{ __html: line.description }}
@@ -425,10 +434,10 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                               )}
                               
                               {proposal.cond_reglement_doc && (
-                                <p className="text-xs text-slate-500 mb-3">{formatPaymentCondition(proposal.cond_reglement_doc)}</p>
+                                <p className="text-xs text-slate-500 mb-1">{formatPaymentCondition(proposal.cond_reglement_doc)}</p>
                               )}
                               
-                              <div className="border-t border-slate-700 pt-2 text-right">
+                              <div className="border-t border-slate-700 pt-1 text-right">
                                 <p className="text-xs text-slate-300">
                                   {formatAmount(proposal.total_ht)} € HT
                                 </p>
@@ -444,37 +453,37 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
                     {/* Invoices */}
                     {project.invoices && project.invoices.length > 0 && (
-                      <div className="mt-4 pt-4">
-                        <div className="space-y-2">
+                      <div className="mt-2 pt-2">
+                        <div className="space-y-1">
                           {project.invoices.map((invoice) => {
                             const statusBadge = getInvoiceStatusBadge(invoice.status)
                             return (
                               <div
                                 key={invoice.id}
-                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded p-3 transition-colors"
+                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded p-2 transition-colors"
                               >
-                                <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center justify-between gap-2 mb-1">
                                   <a
                                     href={dolibarrLinks.invoice(invoice.id)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2"
+                                    className="font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 text-sm"
                                   >
                                     {invoice.ref}
-                                    <ExternalLink size={14} />
+                                    <ExternalLink size={12} />
                                   </a>
-                                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${statusBadge.color}`}>
+                                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${statusBadge.color}`}>
                                     {statusBadge.text}
                                   </span>
                                 </div>
                                 
                                 {invoice.date_validation && (
-                                  <p className="text-xs text-slate-400 mb-3">
+                                  <p className="text-xs text-slate-400 mb-1">
                                     {formatDate(invoice.date_validation)}
                                   </p>
                                 )}
                                 
-                                <div className="border-t border-slate-700 pt-2 text-right">
+                                <div className="border-t border-slate-700 pt-1 text-right">
                                   <p className="text-xs text-slate-300">
                                     {formatAmount(invoice.total_ht)} € HT
                                   </p>
@@ -488,82 +497,193 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
                         </div>
                       </div>
                     )}
+
+                    {/* Planned Invoices */}
+                    {(() => {
+                      const now = Math.floor(Date.now() / 1000)
+                      const plannedInvoices: Array<{ label: string; date: number; amount: number; proposalRef: string }> = []
+
+                      // Extract all future payment schedules from proposals
+                      if (project.proposals) {
+                        project.proposals.forEach((proposal) => {
+                          const schedule = extractPaymentSchedule(proposal.cond_reglement_doc, proposal)
+                          schedule.forEach((payment) => {
+                            if (payment.date && payment.date > now) {
+                              plannedInvoices.push({
+                                label: payment.label,
+                                date: payment.date,
+                                amount: (proposal.total * payment.percentage) / 100,
+                                proposalRef: proposal.ref
+                              })
+                            }
+                          })
+                        })
+                      }
+
+                      return plannedInvoices.length > 0 ? (
+                        <div className="mt-2 pt-2">
+                          <div className="space-y-1">
+                            {plannedInvoices.sort((a, b) => a.date - b.date).map((invoice, idx) => (
+                              <div
+                                key={idx}
+                                className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded p-2 transition-colors"
+                              >
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                  <span className="font-semibold text-slate-300 text-sm">
+                                    {invoice.label} ({invoice.proposalRef})
+                                  </span>
+                                  <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-blue-500/20 text-blue-300">
+                                    Prévu
+                                  </span>
+                                </div>
+                                <p className="text-xs text-slate-400 mb-1">
+                                  {formatDate(invoice.date)}
+                                </p>
+                                <div className="border-t border-slate-700 pt-1 text-right">
+                                  <p className="text-sm text-slate-200 font-semibold">
+                                    {formatAmount(invoice.amount)} € TTC
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null
+                    })()}
                   </div>
                 )}
 
-                {/* Planned Invoices */}
-                {(() => {
-                  const now = Math.floor(Date.now() / 1000)
-                  const plannedInvoices: Array<{ label: string; date: number; amount: number; proposalRef: string }> = []
-
-                  // Extract all future payment schedules from proposals
-                  if (project.proposals) {
-                    project.proposals.forEach((proposal) => {
-                      const schedule = extractPaymentSchedule(proposal.cond_reglement_doc, proposal)
-                      schedule.forEach((payment) => {
-                        if (payment.date && payment.date > now) {
-                          plannedInvoices.push({
-                            label: payment.label,
-                            date: payment.date,
-                            amount: (proposal.total * payment.percentage) / 100,
-                            proposalRef: proposal.ref
-                          })
-                        }
-                      })
-                    })
-                  }
-
-                  return plannedInvoices.length > 0 ? (
-                    <div className="mt-4 pt-4">
-                      <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Factures Prévues</p>
-                      <div className="space-y-2">
-                        {plannedInvoices.sort((a, b) => a.date - b.date).map((invoice, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded p-3 transition-colors"
-                          >
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                              <span className="font-semibold text-slate-300">
-                                {invoice.label} ({invoice.proposalRef})
-                              </span>
-                              <span className="text-xs px-2 py-0.5 rounded font-medium bg-blue-500/20 text-blue-300">
-                                Prévu
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-400 mb-2">
-                              {formatDate(invoice.date)}
-                            </p>
-                            <div className="border-t border-slate-700 pt-2 text-right">
-                              <p className="text-sm text-slate-200 font-semibold">
-                                {formatAmount(invoice.amount)} € TTC
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null
-                })()}
               </div>
             )}
 
             {/* Time */}
             <div className="border-t border-slate-700/50 pt-6">
               <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Temps</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-slate-400 mb-1">Jours Planifiés</p>
-                  <p className="text-lg font-semibold text-slate-200">
-                    {(project.wp_days + project.rd_days).toFixed(1)} j
-                  </p>
-                </div>
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-slate-400 mb-1">Temps Passé</p>
                   <p className="text-lg font-semibold text-amber-400">
                     {project.time_spent_total.toFixed(1)} j
                   </p>
                 </div>
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Jours Planifiés</p>
+                  <p className="text-lg font-semibold text-slate-200">
+                    {(project.wp_days + project.rd_days).toFixed(1)} j
+                  </p>
+                </div>
               </div>
+
+              {/* Consumption gauge */}
+              {(() => {
+                const plannedDays = project.wp_days + project.rd_days
+                const consumption = plannedDays > 0 ? (project.time_spent_total / plannedDays) * 100 : 0
+                const isOverConsumed = project.time_spent_total > plannedDays
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-slate-400">Consommation</span>
+                      <span className="text-slate-300 font-semibold">{consumption.toFixed(0)}%</span>
+                      {isOverConsumed && <span className="text-red-400 font-semibold">Dépassé</span>}
+                    </div>
+                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          isOverConsumed
+                            ? 'bg-red-500'
+                            : consumption > 85
+                            ? 'bg-orange-500'
+                            : 'bg-blue-500'
+                        }`}
+                        style={{ width: `${Math.min(100, consumption)}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Tasks List */}
+              {project.tasks && project.tasks.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Tâches</p>
+                  <div className="space-y-2">
+                    {project.tasks.map((task, idx) => {
+                      const consumption = task.planned_workload > 0 
+                        ? (task.duration_effective / task.planned_workload) * 100 
+                        : 0
+                      const isOverConsumed = task.duration_effective > task.planned_workload
+
+                      return (
+                        <div key={idx} className="bg-slate-700/20 border border-slate-700/50 rounded p-2">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <a
+                              href={`https://gaaspard.catie.fr/projet/tasks/task.php?id=${task.id}&withproject=1`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 hover:opacity-80 transition-opacity"
+                            >
+                              <div>
+                                <h4 className="text-sm font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                                  {task.ref}
+                                  <ExternalLink size={12} />
+                                </h4>
+                                <p className="text-xs text-slate-400">
+                                  {task.label}
+                                </p>
+                              </div>
+                            </a>
+                            <span className="text-xs text-slate-400 flex-shrink-0">
+                              {task.duration_effective.toFixed(1)} / {task.planned_workload.toFixed(1)} j
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                isOverConsumed
+                                  ? 'bg-red-500'
+                                  : consumption > 85
+                                  ? 'bg-orange-500'
+                                  : 'bg-blue-500'
+                              }`}
+                              style={{ width: `${Math.min(100, consumption)}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Timespent by User */}
+              {project.timespent_by_user && project.timespent_by_user.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Temps par personne</p>
+                  <div className="space-y-2">
+                    {project.timespent_by_user
+                      .sort((a, b) => b.total_duration - a.total_duration)
+                      .map((user, idx) => (
+                        <div key={idx} className="bg-slate-700/20 border border-slate-700/50 rounded p-2">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-sm font-medium text-slate-300">
+                              {user.user_name}
+                            </span>
+                            <span className="text-xs text-slate-400 flex-shrink-0">
+                              {user.total_duration.toFixed(1)} j
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-blue-500 transition-all"
+                              style={{ width: `${Math.min(100, (user.total_duration / project.time_spent_total) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Description */}
