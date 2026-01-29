@@ -124,6 +124,7 @@ def get_dashboard():
                     "client_id": client_id,
                     "client_name": client_name,
                     "status": proj.get("status"),
+                    "date_start": proj.get("date_start"),
                     "date_end": proj.get("date_end"),
                     "budget_total": budget,
                     "total_invoiced": 0,

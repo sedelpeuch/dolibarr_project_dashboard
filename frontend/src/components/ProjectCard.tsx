@@ -18,9 +18,9 @@ const getUnitechBadge = (unittech: number): string => {
 
 const getUnitechColor = (unittech: number): string => {
   switch (unittech) {
-    case 1: return 'bg-blue-500'      // SIDO
-    case 2: return 'bg-green-500'     // SONU
-    case 3: return 'bg-orange-500'    // HOMA
+    case 1: return 'bg-blue-500'       // SIDO
+    case 2: return 'bg-[#45a288]'      // SONU
+    case 3: return 'bg-orange-500'     // HOMA
     default: return 'bg-slate-600'
   }
 }
@@ -39,10 +39,6 @@ const formatDate = (timestamp: number): string => {
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
-  const isDeadlineUrgent = project.date_end
-    ? (project.date_end * 1000) - Date.now() < 7 * 24 * 60 * 60 * 1000
-    : false
-  
   // Calculate amount to display based on project type
   const displayAmount = project.is_opportunity
     ? (project.opp_amount * project.opp_percent / 100)
@@ -51,17 +47,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   const unittechs = getUnittechs(project.unittech)
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-lg p-6 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-200">
+    <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
       {/* Header with title and badges */}
-      <div className="flex items-start justify-between mb-3 gap-3">
+      <div className="flex items-start justify-between mb-4 gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-slate-100">{project.title}</h3>
+            <h3 className="text-lg font-bold text-slate-100">{project.title}</h3>
             <a
               href={dolibarrLinks.project(project.id)}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-400 hover:text-blue-300"
+              className="text-slate-400 hover:text-blue-400 transition-colors"
             >
               <ExternalLink size={16} />
             </a>
@@ -73,7 +69,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         {/* Badges - right aligned */}
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {unittechs.map((ut) => (
-            <span key={ut.badge} className={`${ut.color} text-white text-xs px-2 py-1 rounded font-semibold whitespace-nowrap`}>
+            <span key={ut.badge} className={`${ut.color} text-white text-xs px-2 py-1 rounded font-semibold whitespace-nowrap shadow-lg`}>
               {ut.badge}
             </span>
           ))}
@@ -85,42 +81,46 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         href={dolibarrLinks.thirdparty(project.client_id)}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-sm text-blue-400 hover:text-blue-300 hover:underline block mb-3"
+        className="text-sm text-blue-400 hover:text-blue-300 hover:underline block mb-4 font-medium transition-colors"
       >
         {project.client_name || 'N/A'}
       </a>
 
-      {/* Description */}
-      {project.description && (
-        <p className="text-xs text-slate-400 mb-3 line-clamp-2" dangerouslySetInnerHTML={{ __html: project.description }} />
-      )}
-
-      {/* Days and dates */}
-      <div className="grid grid-cols-3 gap-2 mb-3">
-        {project.wp_days > 0 && (
-          <div className="bg-slate-800 rounded p-2">
-            <p className="text-xs text-slate-400">Travail</p>
-            <p className="text-sm font-semibold text-slate-100">{project.wp_days.toFixed(1)}j</p>
+      {/* Info rows */}
+      <div className="space-y-2 text-sm">
+        {/* Jours */}
+        <div className="flex justify-between items-center">
+          <span className="text-slate-400">Jours</span>
+          <div className="flex gap-2">
+            {project.wp_days > 0 && (
+              <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-semibold">
+                {project.wp_days.toFixed(1)}
+              </span>
+            )}
+            {project.rd_days > 0 && (
+              <span className="bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-semibold">
+                {project.rd_days.toFixed(1)}
+              </span>
+            )}
+            {project.wp_days === 0 && project.rd_days === 0 && (
+              <span className="text-slate-500">-</span>
+            )}
           </div>
-        )}
-        {project.rd_days > 0 && (
-          <div className="bg-slate-800 rounded p-2">
-            <p className="text-xs text-slate-400">R&D</p>
-            <p className="text-sm font-semibold text-slate-100">{project.rd_days.toFixed(1)}j</p>
-          </div>
-        )}
-        <div className="bg-slate-800 rounded p-2">
-          <p className="text-xs text-slate-400">Fin</p>
-          <p className={`text-sm font-semibold ${isDeadlineUrgent ? 'text-red-400' : 'text-slate-100'}`}>
-            {formatDate(project.date_end)}
-          </p>
         </div>
-      </div>
 
-      {/* Budget/Amount */}
-      <div className="bg-slate-800 rounded p-3">
-        <p className="text-xs text-slate-400 mb-1">{project.is_opportunity ? 'Opportunité' : 'Valeur vendue'}</p>
-        <p className="text-lg font-semibold text-slate-100">€{displayAmount.toFixed(2)}</p>
+        {/* Dates */}
+        <div className="flex justify-between items-center text-slate-300">
+          <span className="text-slate-400">Période</span>
+          <span className="font-semibold">
+            {formatDate(project.date_start)} → {formatDate(project.date_end)}
+          </span>
+        </div>
+
+        {/* Budget */}
+        <div className="flex justify-between items-center text-slate-300 pt-2 border-t border-slate-700/50">
+          <span className="text-slate-400">{project.is_opportunity ? 'Opportunité' : 'Budget'}</span>
+          <span className="font-bold text-blue-400">€{displayAmount.toFixed(2)}</span>
+        </div>
       </div>
     </div>
   )

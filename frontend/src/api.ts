@@ -15,6 +15,7 @@ export interface Project {
   client_id: string
   client_name: string
   status: string
+  date_start: number
   date_end: number
   budget_total: number
   total_invoiced: number
