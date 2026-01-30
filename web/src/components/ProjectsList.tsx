@@ -1,5 +1,5 @@
 import React from "react";
-import { Project } from "../api";
+import type { Project } from "../types";
 import { ProjectCard } from "./ProjectCard";
 
 interface ProjectsListProps {

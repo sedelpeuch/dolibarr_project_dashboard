@@ -1,60 +1,29 @@
-import React from "react";
-import { ExternalLink } from "lucide-react";
-import { Project } from "../api";
-import { dolibarrLinks } from "../config";
+import React from 'react'
+import { ExternalLink } from 'lucide-react'
+import { dolibarrLinks, UNITECH_MAP, UNITECH_COLORS } from '../config'
+import type { Project } from '../types'
 
 interface ProjectCardProps {
-  project: Project;
-  onDetailClick?: (project: Project) => void;
+  project: Project
+  onDetailClick?: (project: Project) => void
 }
 
-const getUnitechBadge = (unittech: number): string => {
-  switch (unittech) {
-    case 1:
-      return "SIDO";
-    case 2:
-      return "SONU";
-    case 3:
-      return "HOMA";
-    default:
-      return "";
-  }
-};
-
-const getUnitechColor = (unittech: number): string => {
-  switch (unittech) {
-    case 1:
-      return "bg-blue-500"; // SIDO
-    case 2:
-      return "bg-[#45a288]"; // SONU
-    case 3:
-      return "bg-orange-500"; // HOMA
-    default:
-      return "bg-slate-600";
-  }
-};
-
-const getUnittechs = (
-  unittechs: number[],
-): { badge: string; color: string }[] => {
+const getUnittechs = (unittechs: number[]): { badge: string; color: string }[] => {
   return unittechs
-    .map((ut) => ({
-      badge: getUnitechBadge(ut),
-      color: getUnitechColor(ut),
-    }))
-    .filter((ut) => ut.badge !== "");
-};
+    .map((ut) => ({ badge: UNITECH_MAP[ut], color: UNITECH_COLORS[ut] }))
+    .filter((ut) => ut.badge && ut.color)
+}
 
 const formatDate = (timestamp: number): string => {
-  return new Date(timestamp * 1000).toLocaleDateString("fr-FR");
-};
+  return new Date(timestamp * 1000).toLocaleDateString('fr-FR')
+}
 
 const formatAmount = (amount: number): string => {
-  return new Intl.NumberFormat("fr-FR", {
+  return new Intl.NumberFormat('fr-FR', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
-};
+  }).format(amount)
+}
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,

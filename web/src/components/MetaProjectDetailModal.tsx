@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import { X } from "lucide-react";
 import { MetaProject } from "../hooks/useMetaProjects";
-import { Project } from "../api";
-import { formatAmount } from "../utils/formatters";
+import type { Project } from "../types";
+import { formatAmount } from "../utils";
 
 interface MetaProjectDetailModalProps {
   metaProject: MetaProject;

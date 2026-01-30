@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Eye, Edit2 } from "lucide-react";
 import { MetaProject, useMetaProjects } from "../hooks/useMetaProjects";
-import { Project } from "../api";
+import type { Project } from "../types";
 
 interface MetaProjectsTabProps {
   allProjects: Project[];

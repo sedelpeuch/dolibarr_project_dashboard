@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { DashboardData, apiService } from '../api'
+import type { DashboardData } from '../types'
+import { apiService } from '../api'
 
 interface UseDashboardState {
   data: DashboardData | null

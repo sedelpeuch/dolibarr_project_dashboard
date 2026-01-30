@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { X, ExternalLink } from "lucide-react";
-import { Project } from "../api";
+import type { Project } from "../types";
 import { dolibarrLinks } from "../config";
 import {
   formatDate,
   formatAmount,
   formatPaymentCondition,
-} from "../utils/formatters";
+} from "../utils";
 
 interface ProjectDetailModalProps {
   project: Project | null;

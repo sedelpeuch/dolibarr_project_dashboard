@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Trash2, Plus, Loader } from "lucide-react";
-import api from "../api";
+import { api } from "../api";
 
 interface ProjectListItem {
   id: number;
