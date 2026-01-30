@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
-from src.routes import dolibarr, meta_projects, projects
-from src.storage import initialize_data
+from src.infrastructure import initialize_data
+from src.routes import dashboard, meta_projects, projects
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +38,7 @@ app.add_middleware(
 # Include routers
 app.include_router(meta_projects.router)
 app.include_router(projects.router)
-app.include_router(dolibarr.router)
+app.include_router(dashboard.router)
 
 
 if __name__ == "__main__":

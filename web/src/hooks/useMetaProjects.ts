@@ -42,7 +42,7 @@ export const useMetaProjects = () => {
         projectIds,
         createdAt: new Date().toISOString(),
       }
-      
+
       const response = await api.post('/meta-projects', newMetaProject)
       await loadMetaProjects()
       return response.data
@@ -60,7 +60,7 @@ export const useMetaProjects = () => {
         projectIds,
         createdAt: metaProjects.find(p => p.id === id)?.createdAt || new Date().toISOString(),
       }
-      
+
       const response = await api.put(`/meta-projects/${id}`, metaProject)
       await loadMetaProjects()
       return response.data

@@ -2,7 +2,8 @@
 
 import json
 import os
-from pathlib import Path
+
+from src.infrastructure import get_data_file
 
 
 class Settings:
@@ -41,8 +42,7 @@ class Settings:
 
     def _load_tracked_projects(self) -> list[int]:
         """Load tracked projects list from data/data.json file"""
-        data_dir = os.getenv("DATA_DIR", "./data")
-        projects_file = Path(data_dir) / "data.json"
+        projects_file = get_data_file()
         if not projects_file.exists():
             return []
 

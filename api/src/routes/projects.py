@@ -7,8 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.config import settings
-from src.dolibarr_client import DolibarrClient
-from src.storage import load_data, save_data
+from src.infrastructure import DolibarrClient, load_data, save_data
 
 logger = logging.getLogger(__name__)
 

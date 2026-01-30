@@ -1,11 +1,14 @@
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from "lucide-react";
 
 interface ErrorMessageProps {
-  error: Error
-  onRetry?: () => void
+  error: Error;
+  onRetry?: () => void;
 }
 
-export const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, onRetry }) => {
+export const ErrorMessage: React.FC<ErrorMessageProps> = ({
+  error,
+  onRetry,
+}) => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="text-center max-w-md">
@@ -24,5 +27,5 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, onRetry }) =>
         )}
       </div>
     </div>
-  )
-}
+  );
+};

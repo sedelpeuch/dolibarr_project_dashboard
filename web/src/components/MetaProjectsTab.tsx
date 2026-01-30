@@ -1,82 +1,93 @@
-import React, { useState } from 'react'
-import { Plus, Trash2, Eye, Edit2 } from 'lucide-react'
-import { MetaProject, useMetaProjects } from '../hooks/useMetaProjects'
-import { Project } from '../api'
+import React, { useState } from "react";
+import { Plus, Trash2, Eye, Edit2 } from "lucide-react";
+import { MetaProject, useMetaProjects } from "../hooks/useMetaProjects";
+import { Project } from "../api";
 
 interface MetaProjectsTabProps {
-  allProjects: Project[]
-  onViewMetaProject: (metaProject: MetaProject) => void
+  allProjects: Project[];
+  onViewMetaProject: (metaProject: MetaProject) => void;
 }
 
 export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
   allProjects,
-  onViewMetaProject
+  onViewMetaProject,
 }) => {
-  const { metaProjects, create, update, delete: deleteMetaProject, isLoaded, loading, error } = useMetaProjects()
-  const [isCreating, setIsCreating] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [formName, setFormName] = useState('')
-  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(new Set())
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
+  const {
+    metaProjects,
+    create,
+    update,
+    delete: deleteMetaProject,
+    isLoaded,
+    loading,
+    error,
+  } = useMetaProjects();
+  const [isCreating, setIsCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formName, setFormName] = useState("");
+  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const handleCreateClick = () => {
-    setIsCreating(true)
-    setEditingId(null)
-    setFormName('')
-    setSelectedProjectIds(new Set())
-  }
+    setIsCreating(true);
+    setEditingId(null);
+    setFormName("");
+    setSelectedProjectIds(new Set());
+  };
 
   const handleEditClick = (metaProject: MetaProject) => {
-    setEditingId(metaProject.id)
-    setIsCreating(false)
-    setFormName(metaProject.name)
-    setSelectedProjectIds(new Set(metaProject.projectIds))
-  }
+    setEditingId(metaProject.id);
+    setIsCreating(false);
+    setFormName(metaProject.name);
+    setSelectedProjectIds(new Set(metaProject.projectIds));
+  };
 
   const handleCancel = () => {
-    setIsCreating(false)
-    setEditingId(null)
-    setFormName('')
-    setSelectedProjectIds(new Set())
-  }
+    setIsCreating(false);
+    setEditingId(null);
+    setFormName("");
+    setSelectedProjectIds(new Set());
+  };
 
   const handleToggleProject = (projectId: number) => {
-    const newSet = new Set(selectedProjectIds)
+    const newSet = new Set(selectedProjectIds);
     if (newSet.has(projectId)) {
-      newSet.delete(projectId)
+      newSet.delete(projectId);
     } else {
-      newSet.add(projectId)
+      newSet.add(projectId);
     }
-    setSelectedProjectIds(newSet)
-  }
+    setSelectedProjectIds(newSet);
+  };
 
   const handleSave = async () => {
     if (!formName.trim() || selectedProjectIds.size === 0) {
-      setSaveError('Veuillez donner un nom et sélectionner au moins un projet')
-      return
+      setSaveError("Veuillez donner un nom et sélectionner au moins un projet");
+      return;
     }
 
-    setIsSaving(true)
-    setSaveError(null)
+    setIsSaving(true);
+    setSaveError(null);
 
     try {
       if (editingId) {
-        await update(editingId, formName, Array.from(selectedProjectIds))
+        await update(editingId, formName, Array.from(selectedProjectIds));
       } else {
-        await create(formName, Array.from(selectedProjectIds))
+        await create(formName, Array.from(selectedProjectIds));
       }
-      handleCancel()
+      handleCancel();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Une erreur est survenue'
-      setSaveError(message)
+      const message =
+        err instanceof Error ? err.message : "Une erreur est survenue";
+      setSaveError(message);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   if (!isLoaded) {
-    return <div className="p-6 text-slate-400">Chargement...</div>
+    return <div className="p-6 text-slate-400">Chargement...</div>;
   }
 
   return (
@@ -85,7 +96,9 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-50">Meta-Projects</h2>
-          <p className="text-sm text-slate-400 mt-1">Combinez plusieurs projets pour une vue d'ensemble</p>
+          <p className="text-sm text-slate-400 mt-1">
+            Combinez plusieurs projets pour une vue d'ensemble
+          </p>
         </div>
         {!isCreating && !editingId && (
           <button
@@ -102,7 +115,7 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
       {(isCreating || editingId) && (
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-slate-50 mb-4">
-            {editingId ? 'Modifier' : 'Créer une'} Meta-Project
+            {editingId ? "Modifier" : "Créer une"} Meta-Project
           </h3>
 
           {/* Error Message */}
@@ -114,7 +127,9 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
 
           {/* Name Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Nom</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Nom
+            </label>
             <input
               type="text"
               value={formName}
@@ -144,8 +159,12 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
                     className="w-4 h-4 rounded cursor-pointer disabled:cursor-not-allowed"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-200 text-sm truncate">{project.ref}</p>
-                    <p className="text-xs text-slate-400 truncate">{project.title}</p>
+                    <p className="font-medium text-slate-200 text-sm truncate">
+                      {project.ref}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {project.title}
+                    </p>
                   </div>
                 </label>
               ))}
@@ -166,7 +185,7 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
               disabled={isSaving}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? 'En cours...' : editingId ? 'Mettre à jour' : 'Créer'}
+              {isSaving ? "En cours..." : editingId ? "Mettre à jour" : "Créer"}
             </button>
           </div>
         </div>
@@ -188,11 +207,11 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
       ) : (
         <div className="space-y-3">
           {metaProjects.map((metaProject) => {
-            const projectCount = metaProject.projectIds.length
+            const projectCount = metaProject.projectIds.length;
             const projectNames = metaProject.projectIds
               .map((id) => allProjects.find((p) => p.id === id)?.ref)
               .filter(Boolean)
-              .join(', ')
+              .join(", ");
 
             return (
               <div
@@ -201,12 +220,18 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-50">{metaProject.name}</h3>
+                    <h3 className="font-semibold text-slate-50">
+                      {metaProject.name}
+                    </h3>
                     <p className="text-sm text-slate-400 mt-1 truncate">
-                      {projectCount} projet{projectCount > 1 ? 's' : ''}: {projectNames}
+                      {projectCount} projet{projectCount > 1 ? "s" : ""}:{" "}
+                      {projectNames}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
-                      Créée le {new Date(metaProject.createdAt).toLocaleDateString('fr-FR')}
+                      Créée le{" "}
+                      {new Date(metaProject.createdAt).toLocaleDateString(
+                        "fr-FR",
+                      )}
                     </p>
                   </div>
 
@@ -229,8 +254,10 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
                       onClick={() => {
                         if (confirm(`Supprimer "${metaProject.name}" ?`)) {
                           deleteMetaProject(metaProject.id).catch((err) => {
-                            alert(`Erreur lors de la suppression: ${err instanceof Error ? err.message : 'Erreur inconnue'}`)
-                          })
+                            alert(
+                              `Erreur lors de la suppression: ${err instanceof Error ? err.message : "Erreur inconnue"}`,
+                            );
+                          });
                         }
                       }}
                       className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition-colors"
@@ -241,10 +268,10 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
                   </div>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
-}
+  );
+};

@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from src.storage import load_data, save_data
+from src.infrastructure import load_data, save_data
 
 logger = logging.getLogger(__name__)
 

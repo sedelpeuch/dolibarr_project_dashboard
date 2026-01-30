@@ -1,144 +1,150 @@
-import React, { useState, useEffect } from 'react'
-import { X, Trash2, Plus, Loader } from 'lucide-react'
-import api from '../api'
+import React, { useState, useEffect } from "react";
+import { X, Trash2, Plus, Loader } from "lucide-react";
+import api from "../api";
 
 interface ProjectListItem {
-  id: number
-  title: string
-  ref: string
-  status?: string
+  id: number;
+  title: string;
+  ref: string;
+  status?: string;
 }
 
 interface ProjectsConfigModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen, onClose }) => {
-  const [projects, setProjects] = useState<ProjectListItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const [newProjectId, setNewProjectId] = useState('')
-  const [searchedProject, setSearchedProject] = useState<ProjectListItem | null>(null)
-  const [searching, setSearching] = useState(false)
-  const [confirming, setConfirming] = useState(false)
-  const [error, setError] = useState('')
+export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [newProjectId, setNewProjectId] = useState("");
+  const [searchedProject, setSearchedProject] =
+    useState<ProjectListItem | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState("");
 
   // Load projects on open
   useEffect(() => {
     if (isOpen) {
-      loadProjects()
+      loadProjects();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const loadProjects = async () => {
     try {
-      setLoading(true)
-      console.log('Fetching projects config...')
-      const response = await api.get('/projects-config')
-      console.log('Response:', response.data)
-      const projectsData = response.data?.projects || []
-      
+      setLoading(true);
+      console.log("Fetching projects config...");
+      const response = await api.get("/projects-config");
+      console.log("Response:", response.data);
+      const projectsData = response.data?.projects || [];
+
       // Trier: ouverts en premier, fermés en dernier
       projectsData.sort((a: any, b: any) => {
-        const aIsClosed = a.status === 2 || a.status === '2'
-        const bIsClosed = b.status === 2 || b.status === '2'
-        
+        const aIsClosed = a.status === 2 || a.status === "2";
+        const bIsClosed = b.status === 2 || b.status === "2";
+
         if (aIsClosed === bIsClosed) {
-          return (a.id as number) - (b.id as number) // Garder l'ordre par ID si même statut
+          return (a.id as number) - (b.id as number); // Garder l'ordre par ID si même statut
         }
-        return aIsClosed ? 1 : -1 // Les fermés à la fin
-      })
-      
-      setProjects(projectsData)
-      setError('')
+        return aIsClosed ? 1 : -1; // Les fermés à la fin
+      });
+
+      setProjects(projectsData);
+      setError("");
     } catch (err) {
-      console.error('Error fetching projects:', err)
-      setError('Erreur lors du chargement des projets')
-      setProjects([])
+      console.error("Error fetching projects:", err);
+      setError("Erreur lors du chargement des projets");
+      setProjects([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSearchProject = async () => {
-    setSearchedProject(null)
-    setError('')
+    setSearchedProject(null);
+    setError("");
 
-    if (!newProjectId || newProjectId.trim() === '') {
-      setError('Veuillez entrer un ID de projet')
-      return
+    if (!newProjectId || newProjectId.trim() === "") {
+      setError("Veuillez entrer un ID de projet");
+      return;
     }
 
     try {
-      setSearching(true)
-      const response = await api.get(`/search-project/${newProjectId}`)
-      
+      setSearching(true);
+      const response = await api.get(`/search-project/${newProjectId}`);
+
       if (response.data) {
         setSearchedProject({
           id: response.data.id,
           title: response.data.title,
           ref: response.data.ref,
           status: response.data.status,
-        })
+        });
       } else {
-        setError(`Projet ${newProjectId} introuvable`)
+        setError(`Projet ${newProjectId} introuvable`);
       }
     } catch (err: any) {
       if (err.response?.status === 404) {
-        setError(`Projet ${newProjectId} introuvable dans Dolibarr`)
+        setError(`Projet ${newProjectId} introuvable dans Dolibarr`);
       } else {
-        setError('Erreur lors de la recherche du projet')
+        setError("Erreur lors de la recherche du projet");
       }
-      console.error(err)
+      console.error(err);
     } finally {
-      setSearching(false)
+      setSearching(false);
     }
-  }
+  };
 
   const handleAddProject = async () => {
-    if (!searchedProject) return
+    if (!searchedProject) return;
 
     // Vérifier si le projet n'est pas déjà dans la liste
     if (projects.some((p) => p.id === searchedProject.id)) {
-      setError('Ce projet est déjà dans la liste')
-      return
+      setError("Ce projet est déjà dans la liste");
+      return;
     }
 
     try {
-      setConfirming(true)
-      const updatedProjects = [...projects, searchedProject].sort((a, b) => a.id - b.id)
-      const projectIds = updatedProjects.map((p) => p.id)
+      setConfirming(true);
+      const updatedProjects = [...projects, searchedProject].sort(
+        (a, b) => a.id - b.id,
+      );
+      const projectIds = updatedProjects.map((p) => p.id);
 
-      await api.post('/projects-config', { projects: projectIds })
+      await api.post("/projects-config", { projects: projectIds });
 
-      setProjects(updatedProjects)
-      setNewProjectId('')
-      setSearchedProject(null)
-      setError('')
+      setProjects(updatedProjects);
+      setNewProjectId("");
+      setSearchedProject(null);
+      setError("");
     } catch (err) {
-      setError('Erreur lors de l\'ajout du projet')
-      console.error(err)
+      setError("Erreur lors de l'ajout du projet");
+      console.error(err);
     } finally {
-      setConfirming(false)
+      setConfirming(false);
     }
-  }
+  };
 
   const handleRemoveProject = async (projectId: number) => {
     try {
-      const updatedProjects = projects.filter((p) => p.id !== projectId)
-      const projectIds = updatedProjects.map((p) => p.id)
+      const updatedProjects = projects.filter((p) => p.id !== projectId);
+      const projectIds = updatedProjects.map((p) => p.id);
 
-      await api.post('/projects-config', { projects: projectIds })
+      await api.post("/projects-config", { projects: projectIds });
 
-      setProjects(updatedProjects)
-      setError('')
+      setProjects(updatedProjects);
+      setError("");
     } catch (err) {
-      setError('Erreur lors de la suppression du projet')
-      console.error(err)
+      setError("Erreur lors de la suppression du projet");
+      console.error(err);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
@@ -153,7 +159,9 @@ export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen
         <div className="bg-slate-900 border border-slate-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
           {/* Header */}
           <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-100">Gestion des projets</h2>
+            <h2 className="text-2xl font-bold text-slate-100">
+              Gestion des projets
+            </h2>
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-slate-200 transition-colors"
@@ -200,12 +208,14 @@ export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen
                       </div>
                       <div className="flex items-center gap-2 ml-4">
                         {proj.status && (
-                          <span className={`text-xs px-2 py-1 rounded font-medium flex-shrink-0 ${
-                            String(proj.status) === '2'
-                              ? 'bg-slate-700 text-slate-300'
-                              : 'bg-green-500/20 text-green-300'
-                          }`}>
-                            {String(proj.status) === '2' ? 'Cloturé' : 'Ouvert'}
+                          <span
+                            className={`text-xs px-2 py-1 rounded font-medium flex-shrink-0 ${
+                              String(proj.status) === "2"
+                                ? "bg-slate-700 text-slate-300"
+                                : "bg-green-500/20 text-green-300"
+                            }`}
+                          >
+                            {String(proj.status) === "2" ? "Cloturé" : "Ouvert"}
                           </span>
                         )}
                         <button
@@ -250,7 +260,7 @@ export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen
                           <Loader size={16} className="animate-spin" />
                         </>
                       ) : (
-                        'Chercher'
+                        "Chercher"
                       )}
                     </button>
                   </div>
@@ -307,5 +317,5 @@ export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen
         </div>
       </div>
     </>
-  )
-}
+  );
+};

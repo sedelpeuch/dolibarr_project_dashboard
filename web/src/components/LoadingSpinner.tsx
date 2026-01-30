@@ -1,8 +1,10 @@
 interface LoadingSpinnerProps {
-  message?: string
+  message?: string;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Chargement...' }) => {
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  message = "Chargement...",
+}) => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="text-center">
@@ -15,5 +17,5 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Charg
         <p className="text-slate-300 font-medium text-lg">{message}</p>
       </div>
     </div>
-  )
-}
+  );
+};
