@@ -235,7 +235,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
               <div className="border-t border-slate-700/50 pt-6">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <a
-                    href={dolibarrLinks.project(project.id)}
+                    href={dolibarrLinks.company(parseInt(project.client_id))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors flex-1 min-w-0"
