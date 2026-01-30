@@ -18,7 +18,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
   // Get the projects included in this meta-project
   const includedProjects = useMemo(() => {
     return metaProject.projectIds
-      .map((id) => allProjects.find((p) => p.id === id))
+      .map((id) => allProjects.find((p) => p.id === Number(id)))
       .filter((p): p is Project => p !== undefined);
   }, [metaProject.projectIds, allProjects]);
 

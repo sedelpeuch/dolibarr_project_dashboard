@@ -119,7 +119,7 @@ class DashboardService:
         proposals_data = self._get_proposals_data(project_id)
 
         return {
-            "id": proj.get("id"),
+            "id": int(proj.get("id", 0)),
             "ref": ref,
             "title": proj.get("title"),
             "client_id": client_id,
