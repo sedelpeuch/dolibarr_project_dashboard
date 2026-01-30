@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { X, ExternalLink } from 'lucide-react'
 import { Project } from '../api'
 import { dolibarrLinks } from '../config'
+import { formatDate, formatAmount, formatPaymentCondition } from '../utils/formatters'
 
 interface ProjectDetailModalProps {
   project: Project | null
@@ -25,36 +26,6 @@ const getUnitechColor = (unittech: number): string => {
     case 3: return 'bg-orange-500'
     default: return 'bg-slate-600'
   }
-}
-
-const formatDate = (timestamp: number): string => {
-  return new Date(timestamp * 1000).toLocaleDateString('fr-FR')
-}
-
-const formatAmount = (amount: number): string => {
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
-const formatPaymentCondition = (code: string): string => {
-  if (!code) return ''
-  
-  // Format: PaymentConditionPT_XXXX where XXXX is a pattern like 5050, 3030, etc.
-  if (code.includes('PT_')) {
-    const parts = code.replace('PaymentCondition', '').replace('PT_', '')
-    
-    // Handle common patterns
-    if (parts === '5050') return '50% à la commande, 50% à la livraison'
-    if (parts === '3070') return '30% à la commande, 70% à la livraison'
-    if (parts === '2580') return '25% à la commande, 80% à la livraison'
-    if (parts === '1090') return '10% à la commande, 90% à la livraison'
-    if (parts === '100') return '100% à la livraison'
-    if (parts === '000100') return '100% à la livraison'
-  }
-  
-  return code
 }
 
 interface PaymentSchedule {

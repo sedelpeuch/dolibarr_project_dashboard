@@ -6,9 +6,12 @@ import { LoadingSpinner } from './components/LoadingSpinner'
 import { ErrorMessage } from './components/ErrorMessage'
 import { ProjectsConfigModal } from './components/ProjectsConfigModal'
 import { ProjectDetailModal } from './components/ProjectDetailModal'
+import { MetaProjectsTab } from './components/MetaProjectsTab'
+import { MetaProjectDetailModal } from './components/MetaProjectDetailModal'
+import { MetaProject } from './hooks/useMetaProjects'
 import { Project } from './api'
 
-type TabType = 'projects' | 'opportunities' | 'rd'
+type TabType = 'projects' | 'opportunities' | 'rd' | 'meta-projects'
 
 function App() {
   const { data, loading, error, refetch } = useDashboard()
@@ -17,6 +20,8 @@ function App() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [selectedMetaProject, setSelectedMetaProject] = useState<MetaProject | null>(null)
+  const [isMetaProjectDetailOpen, setIsMetaProjectDetailOpen] = useState(false)
 
   if (loading) {
     return <LoadingSpinner message="Chargement du dashboard..." />
@@ -100,6 +105,16 @@ function App() {
             }`}
           >
             RD <span className="text-xs ml-1 opacity-75">({openRd.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('meta-projects')}
+            className={`py-4 px-6 font-semibold transition-all duration-200 ${
+              activeTab === 'meta-projects'
+                ? 'text-blue-400 border-b-2 border-blue-500'
+                : 'text-slate-400 hover:text-slate-300 border-b-2 border-transparent'
+            }`}
+          >
+            Meta-Projects
           </button>
         </div>
       </div>
@@ -210,21 +225,31 @@ function App() {
                   <span className="font-semibold text-lg">Projets RD clôturés ({closedRd.length})</span>
                 </button>
                 {showClosed && (
-              <ProjectsList 
-                projects={closedRd}
-                onProjectClick={(proj) => {
-                  setSelectedProject(proj)
-                  setIsDetailModalOpen(true)
-                }}
-              />
-            )}
+                  <ProjectsList 
+                    projects={closedRd}
+                    onProjectClick={(proj) => {
+                      setSelectedProject(proj)
+                      setIsDetailModalOpen(true)
+                    }}
+                  />
+                )}
               </div>
             )}
           </>
         )}
+
+        {activeTab === 'meta-projects' && (
+          <MetaProjectsTab 
+            allProjects={data?.projects || []}
+            onViewMetaProject={(metaProject) => {
+              setSelectedMetaProject(metaProject)
+              setIsMetaProjectDetailOpen(true)
+            }}
+          />
+        )}
       </main>
 
-      {/* Projects Config Modal */}
+      {/* Modals */}
       <ProjectsConfigModal 
         isOpen={isConfigModalOpen}
         onClose={() => setIsConfigModalOpen(false)}
@@ -239,6 +264,18 @@ function App() {
           setSelectedProject(null)
         }}
       />
+
+      {/* Meta-Project Detail Modal */}
+      {selectedMetaProject && (
+        <MetaProjectDetailModal
+          metaProject={selectedMetaProject}
+          allProjects={data?.projects || []}
+          onClose={() => {
+            setIsMetaProjectDetailOpen(false)
+            setSelectedMetaProject(null)
+          }}
+        />
+      )}
     </div>
   )
 }
