@@ -206,9 +206,9 @@ def get_dashboard():
                                         "label": task.get("label", ""),
                                         "duration_effective": duration_float,
                                         "planned_workload": float(
-                                            task.get("planned_workload", 0) or 0
+                                            task.get("planned_workload", 0) or 0,
                                         ),
-                                    }
+                                    },
                                 )
                             except (ValueError, TypeError):
                                 continue

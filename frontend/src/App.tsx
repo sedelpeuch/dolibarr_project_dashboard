@@ -10,6 +10,7 @@ import { MetaProjectsTab } from './components/MetaProjectsTab'
 import { MetaProjectDetailModal } from './components/MetaProjectDetailModal'
 import { MetaProject } from './hooks/useMetaProjects'
 import { Project } from './api'
+import { APP_CONFIG } from './config/app.config'
 
 type TabType = 'projects' | 'opportunities' | 'rd' | 'meta-projects'
 
@@ -50,7 +51,7 @@ function App() {
       <header className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 sticky top-0 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Balthazar</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">{APP_CONFIG.APP_NAME}</h1>
           </div>
           <div className="flex gap-3">
             <button

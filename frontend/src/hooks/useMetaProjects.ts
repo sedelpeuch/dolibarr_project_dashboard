@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { APP_CONFIG } from '../config/app.config'
 
 export interface MetaProject {
   id: string
@@ -7,7 +8,7 @@ export interface MetaProject {
   createdAt: string
 }
 
-const STORAGE_KEY = 'balthazar_meta_projects'
+const STORAGE_KEY = `${APP_CONFIG.STORAGE_PREFIX}_meta_projects`
 
 export const useMetaProjects = () => {
   const [metaProjects, setMetaProjects] = useState<MetaProject[]>([])
