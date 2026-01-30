@@ -31,15 +31,6 @@ class Settings:
         # Load projects whitelist from file
         self.tracked_projects: list[int] = self._load_tracked_projects()
 
-        # CORS Configuration
-        cors_origins_str = os.getenv(
-            "CORS_ORIGINS",
-            "http://localhost:5173,http://localhost:3000",
-        )
-        self.cors_origins: list[str] = [
-            origin.strip() for origin in cors_origins_str.split(",")
-        ]
-
     def _load_tracked_projects(self) -> list[int]:
         """Load tracked projects list from data/data.json file"""
         projects_file = get_data_file()
