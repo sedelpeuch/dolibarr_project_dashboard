@@ -2,6 +2,8 @@
 
 import json
 import logging
+import os
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +37,131 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ============================================================================
+# Data Storage Functions
+# ============================================================================
+
+
+def get_data_dir() -> Path:
+    """Get the data directory from environment variable."""
+    data_dir = os.getenv("DATA_DIR", "./data")
+    path = Path(data_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def get_data_file() -> Path:
+    """Get the path to the main data.json file."""
+    return get_data_dir() / "data.json"
+
+
+def load_data() -> dict:
+    """Load all persistent data from JSON file."""
+    file_path = get_data_file()
+    if not file_path.exists():
+        return {"meta_projects": []}
+
+    try:
+        with open(file_path) as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        logger.error(f"Error loading data: {e}")
+        return {"meta_projects": []}
+
+
+def save_data(data: dict) -> None:
+    """Save all persistent data to JSON file."""
+    file_path = get_data_file()
+    try:
+        with open(file_path, "w") as f:
+            json.dump(data, f, indent=2)
+    except OSError as e:
+        raise HTTPException(status_code=500, detail=f"Error saving data: {e!s}")
+
+
+# ============================================================================
+# Meta-Projects Models & Routes
+# ============================================================================
+
+
+class MetaProject(BaseModel):
+    id: str
+    name: str
+    projectIds: list[int]
+    createdAt: str
+
+
+@app.get("/api/meta-projects")
+def list_meta_projects() -> list[MetaProject]:
+    """List all meta-projects."""
+    data = load_data()
+    projects = data.get("meta_projects", [])
+    return [MetaProject(**p) for p in projects]
+
+
+@app.post("/api/meta-projects")
+def create_meta_project(project: MetaProject) -> MetaProject:
+    """Create a new meta-project."""
+    data = load_data()
+    projects = data.get("meta_projects", [])
+
+    # Check for duplicate ID
+    if any(p["id"] == project.id for p in projects):
+        raise HTTPException(
+            status_code=400,
+            detail="Meta-project with this ID already exists",
+        )
+
+    # Add createdAt if not present
+    project_dict = project.model_dump()
+    if not project_dict.get("createdAt"):
+        project_dict["createdAt"] = datetime.now().isoformat()
+
+    projects.append(project_dict)
+    data["meta_projects"] = projects
+    save_data(data)
+
+    return MetaProject(**project_dict)
+
+
+@app.put("/api/meta-projects/{project_id}")
+def update_meta_project(project_id: str, project: MetaProject) -> MetaProject:
+    """Update an existing meta-project."""
+    data = load_data()
+    projects = data.get("meta_projects", [])
+
+    # Find and update
+    for i, p in enumerate(projects):
+        if p["id"] == project_id:
+            updated = project.model_dump()
+            # Keep original createdAt
+            updated["createdAt"] = p.get("createdAt", datetime.now().isoformat())
+            projects[i] = updated
+            data["meta_projects"] = projects
+            save_data(data)
+            return MetaProject(**updated)
+
+    raise HTTPException(status_code=404, detail="Meta-project not found")
+
+
+@app.delete("/api/meta-projects/{project_id}")
+def delete_meta_project(project_id: str) -> dict:
+    """Delete a meta-project."""
+    data = load_data()
+    projects = data.get("meta_projects", [])
+
+    # Filter out the project
+    original_count = len(projects)
+    projects = [p for p in projects if p["id"] != project_id]
+
+    if len(projects) == original_count:
+        raise HTTPException(status_code=404, detail="Meta-project not found")
+
+    data["meta_projects"] = projects
+    save_data(data)
+    return {"message": "Meta-project deleted successfully"}
+
+
 # Initialize Dolibarr client
 dolibarr = DolibarrClient(
     base_url=settings.dolibarr_url,
@@ -47,10 +174,9 @@ _thirdparty_cache: dict[int, dict] = {}
 
 
 def get_projects_config_path() -> Path:
-    """Get the path to projects.json"""
-    # Path to the backend root directory
-    backend_root = Path(__file__).parent.parent.parent
-    config_file = backend_root / "projects.json"
+    """Get the path to data.json in data directory"""
+    data_dir = os.getenv("DATA_DIR", "./data")
+    config_file = Path(data_dir) / "data.json"
     return config_file
 
 
@@ -100,7 +226,7 @@ def health_check():
 @app.get("/api/dashboard")
 def get_dashboard():
     """Main dashboard endpoint
-    Returns aggregated data for tracked projects from projects.json
+    Returns aggregated data for tracked projects from data.json
     """
     try:
         # Get list of projects to track from configuration

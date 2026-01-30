@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios'
 import { API_URL } from './config'
 
-const api: AxiosInstance = axios.create({
+export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',

@@ -1,0 +1,16 @@
+node_modules
+.git
+.gitignore
+.env
+.venv
+__pycache__
+*.pyc
+.ruff_cache
+.pre-commit-config.yaml
+.vscode
+.idea
+*.lock
+build
+dist
+.DS_Store
+README.md

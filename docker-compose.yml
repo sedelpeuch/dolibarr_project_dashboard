@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "41587:41587"
+      - "5173:5173"
+    env_file:
+      - .env
+    environment:
+      - DATA_DIR=/data
+    volumes:
+      - data_volume:/data
+    restart: unless-stopped
+
+volumes:
+  data_volume:

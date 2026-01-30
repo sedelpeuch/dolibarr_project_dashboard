@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
-import { X, ExternalLink } from 'lucide-react'
+import { X } from 'lucide-react'
 import { MetaProject } from '../hooks/useMetaProjects'
 import { Project } from '../api'
-import { formatAmount, formatDate } from '../utils/formatters'
+import { formatAmount } from '../utils/formatters'
 
 interface MetaProjectDetailModalProps {
   metaProject: MetaProject
@@ -271,10 +271,10 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
                 >
                   <div className="flex-1">
                     <p className="font-semibold text-slate-300">{project.ref}</p>
-                    <p className="text-xs text-slate-400">{project.label}</p>
+                    <p className="text-xs text-slate-400">{project.title}</p>
                   </div>
                   <div className="text-right text-xs">
-                    <p className="text-slate-400">{formatAmount(project.facture_total)} € facturé</p>
+                    <p className="text-slate-400">{formatAmount(project.total_invoiced)} € facturé</p>
                     <p className="text-slate-500">{project.time_spent_total.toFixed(1)} j</p>
                   </div>
                 </div>

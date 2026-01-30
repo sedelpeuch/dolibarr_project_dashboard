@@ -39,12 +39,12 @@ export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen
       const projectsData = response.data?.projects || []
       
       // Trier: ouverts en premier, fermés en dernier
-      projectsData.sort((a, b) => {
+      projectsData.sort((a: any, b: any) => {
         const aIsClosed = a.status === 2 || a.status === '2'
         const bIsClosed = b.status === 2 || b.status === '2'
         
         if (aIsClosed === bIsClosed) {
-          return a.id - b.id // Garder l'ordre par ID si même statut
+          return (a.id as number) - (b.id as number) // Garder l'ordre par ID si même statut
         }
         return aIsClosed ? 1 : -1 // Les fermés à la fin
       })
@@ -201,11 +201,11 @@ export const ProjectsConfigModal: React.FC<ProjectsConfigModalProps> = ({ isOpen
                       <div className="flex items-center gap-2 ml-4">
                         {proj.status && (
                           <span className={`text-xs px-2 py-1 rounded font-medium flex-shrink-0 ${
-                            proj.status === 2 || proj.status === '2'
+                            String(proj.status) === '2'
                               ? 'bg-slate-700 text-slate-300'
                               : 'bg-green-500/20 text-green-300'
                           }`}>
-                            {proj.status === 2 || proj.status === '2' ? 'Cloturé' : 'Ouvert'}
+                            {String(proj.status) === '2' ? 'Cloturé' : 'Ouvert'}
                           </span>
                         )}
                         <button

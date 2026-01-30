@@ -15,6 +15,10 @@ dist/
 build/
 .DS_Store
 
+# Data storage
+data/
+/data/
+
 # Environment variables
 .env
 .env.local

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Plus, Trash2, Eye, Edit2 } from 'lucide-react'
+import { Plus, Trash2, Eye, Edit2 } from 'lucide-react'
 import { MetaProject, useMetaProjects } from '../hooks/useMetaProjects'
 import { Project } from '../api'
 
@@ -12,11 +12,13 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
   allProjects,
   onViewMetaProject
 }) => {
-  const { metaProjects, create, update, delete: deleteMetaProject, isLoaded } = useMetaProjects()
+  const { metaProjects, create, update, delete: deleteMetaProject, isLoaded, loading, error } = useMetaProjects()
   const [isCreating, setIsCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formName, setFormName] = useState('')
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<number>>(new Set())
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const handleCreateClick = () => {
     setIsCreating(true)
@@ -49,19 +51,28 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
     setSelectedProjectIds(newSet)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formName.trim() || selectedProjectIds.size === 0) {
-      alert('Veuillez donner un nom et sélectionner au moins un projet')
+      setSaveError('Veuillez donner un nom et sélectionner au moins un projet')
       return
     }
 
-    if (editingId) {
-      update(editingId, formName, Array.from(selectedProjectIds))
-    } else {
-      create(formName, Array.from(selectedProjectIds))
-    }
+    setIsSaving(true)
+    setSaveError(null)
 
-    handleCancel()
+    try {
+      if (editingId) {
+        await update(editingId, formName, Array.from(selectedProjectIds))
+      } else {
+        await create(formName, Array.from(selectedProjectIds))
+      }
+      handleCancel()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Une erreur est survenue'
+      setSaveError(message)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   if (!isLoaded) {
@@ -94,6 +105,13 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
             {editingId ? 'Modifier' : 'Créer une'} Meta-Project
           </h3>
 
+          {/* Error Message */}
+          {saveError && (
+            <div className="mb-4 p-3 bg-red-600/20 border border-red-600/50 rounded text-red-400 text-sm">
+              {saveError}
+            </div>
+          )}
+
           {/* Name Input */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-slate-300 mb-2">Nom</label>
@@ -102,7 +120,8 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Ex: Conv CATIE 2024"
-              className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-50 placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              disabled={isSaving}
+              className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-slate-50 placeholder-slate-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -121,11 +140,12 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
                     type="checkbox"
                     checked={selectedProjectIds.has(project.id)}
                     onChange={() => handleToggleProject(project.id)}
-                    className="w-4 h-4 rounded cursor-pointer"
+                    disabled={isSaving}
+                    className="w-4 h-4 rounded cursor-pointer disabled:cursor-not-allowed"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-slate-200 text-sm truncate">{project.ref}</p>
-                    <p className="text-xs text-slate-400 truncate">{project.label}</p>
+                    <p className="text-xs text-slate-400 truncate">{project.title}</p>
                   </div>
                 </label>
               ))}
@@ -136,15 +156,17 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
           <div className="flex gap-3 justify-end">
             <button
               onClick={handleCancel}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
+              disabled={isSaving}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Annuler
             </button>
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              disabled={isSaving}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {editingId ? 'Mettre à jour' : 'Créer'}
+              {isSaving ? 'En cours...' : editingId ? 'Mettre à jour' : 'Créer'}
             </button>
           </div>
         </div>
@@ -206,7 +228,9 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
                     <button
                       onClick={() => {
                         if (confirm(`Supprimer "${metaProject.name}" ?`)) {
-                          deleteMetaProject(metaProject.id)
+                          deleteMetaProject(metaProject.id).catch((err) => {
+                            alert(`Erreur lors de la suppression: ${err instanceof Error ? err.message : 'Erreur inconnue'}`)
+                          })
                         }
                       }}
                       className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition-colors"

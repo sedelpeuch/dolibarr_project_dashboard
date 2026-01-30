@@ -40,9 +40,9 @@ class Settings:
         ]
 
     def _load_tracked_projects(self) -> list[int]:
-        """Load tracked projects list from projects.json file"""
-        projects_file = Path(__file__).parent.parent / "projects.json"
-
+        """Load tracked projects list from data/data.json file"""
+        data_dir = os.getenv("DATA_DIR", "./data")
+        projects_file = Path(data_dir) / "data.json"
         if not projects_file.exists():
             return []
 
@@ -51,7 +51,7 @@ class Settings:
                 data = json.load(f)
                 return data.get("projects", [])
         except (OSError, json.JSONDecodeError) as e:
-            print(f"Warning: Could not load projects.json: {e}")
+            print(f"Warning: Could not load data.json: {e}")
             return []
 
 
