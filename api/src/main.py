@@ -9,8 +9,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from api.config import settings
-from api.dolibarr_client import DolibarrClient
+from src.config import settings
+from src.dolibarr_client import DolibarrClient
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
