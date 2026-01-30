@@ -41,7 +41,7 @@ class Settings:
 
     def _load_tracked_projects(self) -> list[int]:
         """Load tracked projects list from projects.json file"""
-        projects_file = Path(__file__).parent.parent.parent / "projects.json"
+        projects_file = Path(__file__).parent.parent / "projects.json"
 
         if not projects_file.exists():
             return []
