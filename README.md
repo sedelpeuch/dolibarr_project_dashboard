@@ -4,17 +4,17 @@ Dashboard pour coordinateurs de projets utilisant Dolibarr.
 
 ## Installation
 
-### Backend
+### API
 
 ```bash
-cd backend
+cd api
 uv sync
 ```
 
-### Frontend
+### Web
 
 ```bash
-cd frontend
+cd web
 yarn install
 ```
 
@@ -33,19 +33,19 @@ cp .env .env
 
 ## Développement
 
-### Backend
+### API
 
 ```bash
-cd backend
+cd api
 uv run python main.py
 ```
 
 L'API sera disponible sur `http://localhost:8000`
 
-### Frontend
+### Web
 
 ```bash
-cd frontend
+cd web
 yarn dev
 ```
 
@@ -53,8 +53,8 @@ L'interface sera disponible sur `http://localhost:5173`
 
 ## Architecture
 
-- **Backend**: FastAPI + Python (client Dolibarr)
-- **Frontend**: React + TypeScript + Tailwind CSS
+- **API**: FastAPI + Python (client Dolibarr)
+- **Web**: React + TypeScript + Tailwind CSS
 - **Style**: Dark mode moderne
 
 ## Endpoints API

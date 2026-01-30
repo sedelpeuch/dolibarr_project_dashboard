@@ -25,4 +25,4 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/dolibarr_dashboard"]
+packages = ["api/"]
