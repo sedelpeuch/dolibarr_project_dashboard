@@ -126,6 +126,15 @@ class DolibarrClient:
             f"/api/index.php/thirdparties/{thirdparty_id}",
         )
 
+    # ========== USERS ==========
+
+    def get_user(self, user_id: int) -> dict[str, Any]:
+        """Get user details by ID"""
+        return self._request(
+            "GET",
+            f"/api/index.php/users/{user_id}",
+        )
+
     def __del__(self):
         """Cleanup: close the client"""
         self.client.close()

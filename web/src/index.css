@@ -8,6 +8,28 @@
   color-scheme: dark;
 }
 
+/* Custom Animations */
+@keyframes pulse-spin {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-spin {
+    animation: pulse-spin 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
 body {
   @apply bg-slate-950 text-slate-100;
   font-family: "Inter", sans-serif;

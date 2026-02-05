@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Plus, Trash2, Eye, Edit2 } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, Trash2, Edit2 } from "lucide-react";
 import { MetaProject, useMetaProjects } from "../hooks/useMetaProjects";
 import type { Project } from "../types";
+import { formatAmount } from "../utils";
 
 interface MetaProjectsTabProps {
   allProjects: Project[];
@@ -205,66 +206,122 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
           )}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {metaProjects.map((metaProject) => {
-            const projectCount = metaProject.projectIds.length;
-            const projectNames = metaProject.projectIds
-              .map((id) => allProjects.find((p) => p.id === id)?.ref)
-              .filter(Boolean)
-              .join(", ");
+            // Get projects for this meta-project
+            const includedProjects = metaProject.projectIds
+              .map((id) => allProjects.find((p) => p.id === id))
+              .filter((p): p is Project => p !== undefined);
+
+            // Calculate aggregations
+            const totalProposals = includedProjects.reduce((sum, p) => {
+              return sum + (p.proposals?.reduce((s, prop) => s + (prop.total || 0), 0) || 0);
+            }, 0);
+
+            const totalInvoiced = includedProjects.reduce(
+              (sum, p) => sum + p.total_invoiced,
+              0,
+            );
+
+            const totalTimePassed = includedProjects.reduce(
+              (sum, p) => sum + p.time_spent_total,
+              0,
+            );
+
+            const totalPlannedDays = includedProjects.reduce(
+              (sum, p) => sum + p.wp_days + p.rd_days,
+              0,
+            );
+
+            const consumption =
+              totalPlannedDays > 0
+                ? (totalTimePassed / totalPlannedDays) * 100
+                : 0;
+
+            const isOverConsumed = totalTimePassed > totalPlannedDays;
 
             return (
               <div
                 key={metaProject.id}
-                className="bg-slate-800 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors"
+                className="bg-gradient-to-r from-slate-800 to-slate-800/50 border border-slate-700 rounded-lg overflow-hidden hover:border-slate-600 transition-colors cursor-pointer"
+                onClick={() => onViewMetaProject(metaProject)}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-50">
-                      {metaProject.name}
-                    </h3>
-                    <p className="text-sm text-slate-400 mt-1 truncate">
-                      {projectCount} projet{projectCount > 1 ? "s" : ""}:{" "}
-                      {projectNames}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Créée le{" "}
-                      {new Date(metaProject.createdAt).toLocaleDateString(
-                        "fr-FR",
-                      )}
+                {/* Header */}
+                <div className="p-5 border-b border-slate-700">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-slate-50">
+                        {metaProject.name}
+                      </h3>
+                      <p className="text-sm text-slate-400 mt-1">
+                        {includedProjects.length} projet
+                        {includedProjects.length > 1 ? "s" : ""} inclus
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(metaProject);
+                        }}
+                        className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors"
+                        title="Modifier"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Supprimer "${metaProject.name}" ?`)) {
+                            deleteMetaProject(metaProject.id).catch((err) => {
+                              alert(
+                                `Erreur lors de la suppression: ${err instanceof Error ? err.message : "Erreur inconnue"}`,
+                              );
+                            });
+                          }
+                        }}
+                        className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPIs */}
+                <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Propositions</p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {formatAmount(totalProposals)} €
                     </p>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onViewMetaProject(metaProject)}
-                      className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                      title="Afficher"
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Facturé</p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {formatAmount(totalInvoiced)} €
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Consommation</p>
+                    <p
+                      className={`text-lg font-semibold ${
+                        isOverConsumed
+                          ? "text-red-400"
+                          : consumption > 85
+                            ? "text-orange-400"
+                            : "text-blue-400"
+                      }`}
                     >
-                      <Eye size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleEditClick(metaProject)}
-                      className="p-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded transition-colors"
-                      title="Modifier"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Supprimer "${metaProject.name}" ?`)) {
-                          deleteMetaProject(metaProject.id).catch((err) => {
-                            alert(
-                              `Erreur lors de la suppression: ${err instanceof Error ? err.message : "Erreur inconnue"}`,
-                            );
-                          });
-                        }
-                      }}
-                      className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded transition-colors"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                      {consumption.toFixed(0)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Temps</p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {totalTimePassed.toFixed(1)} / {totalPlannedDays.toFixed(1)} j
+                    </p>
                   </div>
                 </div>
               </div>

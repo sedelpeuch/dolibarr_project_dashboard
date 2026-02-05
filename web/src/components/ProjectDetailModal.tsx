@@ -233,32 +233,34 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
             {/* Client */}
             {!project.is_rd && (
               <div className="border-t border-slate-700/50 pt-6">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <a
-                    href={dolibarrLinks.company(parseInt(project.client_id))}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors flex-1 min-w-0"
-                  >
-                    {project.client_name || "N/A"}
-                    <ExternalLink size={14} className="flex-shrink-0" />
-                  </a>
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <a
+                      href={dolibarrLinks.company(parseInt(project.client_id))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors inline-flex"
+                    >
+                      {project.client_name || "N/A"}
+                      <ExternalLink size={14} className="flex-shrink-0" />
+                    </a>
+                    {(project.client_code || project.client_address) && (
+                      <p className="text-xs text-slate-500 inline ml-2">
+                        {project.client_code && `${project.client_code}`}
+                        {project.client_code && project.client_address && " • "}
+                        {project.client_address &&
+                          `${project.client_address}${
+                            project.client_zip || project.client_town
+                              ? ", " + project.client_zip + " " + project.client_town
+                              : ""
+                          }`}
+                      </p>
+                    )}
+                  </div>
                   {project.client_country_code && (
                     <span className="text-xl flex-shrink-0">
                       {countryCodeToFlag(project.client_country_code)}
                     </span>
-                  )}
-                </div>
-
-                <div className="text-sm text-slate-400 space-y-0.5">
-                  {project.client_code && <p>{project.client_code}</p>}
-                  {project.client_address && (
-                    <>
-                      <p>{project.client_address}</p>
-                      <p>
-                        {project.client_zip} {project.client_town}
-                      </p>
-                    </>
                   )}
                 </div>
               </div>

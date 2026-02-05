@@ -3,9 +3,9 @@
  */
 
 // App metadata
-export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Dolibarr Dashboard'
-export const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
-export const ENABLE_META_PROJECTS = import.meta.env.VITE_ENABLE_META_PROJECTS !== 'false'
+export const APP_NAME = 'Dolibarr Dashboard'
+export const API_URL =  'http://localhost:41587/api'
+export const ENABLE_META_PROJECTS = true
 
 // Dolibarr URL loaded from API at runtime
 let DOLIBARR_URL = import.meta.env.VITE_DOLIBARR_URL || ''
@@ -36,6 +36,7 @@ export const dolibarrLinks = {
   user: (id: number) => `${getDolibarrUrl()}/user/card.php?id=${id}`,
   company: (id: number) => `${getDolibarrUrl()}/societe/card.php?socid=${id}`,
   thirdparty: (id: string | number) => `${getDolibarrUrl()}/societe/project.php?socid=${id}`,
+  task: (id: number) => `${getDolibarrUrl()}/projet/tasks/task.php?id=${id}&withproject=1`,
 }
 
 // Unit tech mapping

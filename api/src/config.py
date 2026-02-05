@@ -24,9 +24,9 @@ class Settings:
         self.current_user_id: int = int(os.getenv("CURRENT_USER_ID", "42"))
 
         # FastAPI Configuration
-        self.fastapi_host: str = os.getenv("FASTAPI_HOST", "0.0.0.0")
-        self.fastapi_port: int = int(os.getenv("FASTAPI_PORT", "8000"))
-        self.fastapi_env: str = os.getenv("FASTAPI_ENV", "development")
+        self.fastapi_host: str = "0.0.0.0"
+        self.fastapi_port: int = 41587
+        self.fastapi_env: str = "development"
 
         # Load projects whitelist from file
         self.tracked_projects: list[int] = self._load_tracked_projects()

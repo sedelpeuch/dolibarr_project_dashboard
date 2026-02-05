@@ -60,3 +60,26 @@ def search_project(project_id: int):
     except Exception as e:
         logger.error(f"Error searching project {project_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/current-user")
+def get_current_user():
+    """Get currently authenticated user details"""
+    try:
+        user = dolibarr.get_user(settings.current_user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return {
+            "id": user.get("id"),
+            "firstname": user.get("firstname", ""),
+            "lastname": user.get("lastname", ""),
+            "email": user.get("email", ""),
+            "job": user.get("job"),
+            "login": user.get("login", ""),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading current user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

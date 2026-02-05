@@ -1,9 +1,11 @@
 import { RefreshCw, Settings } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
 import { useDashboard } from './hooks/useDashboard'
 import { useAppLogic } from './hooks/useAppLogic'
 import { useMetaProjects } from './hooks/useMetaProjects'
+import { useCurrentUser } from './hooks/useCurrentUser'
 import { ProjectsList } from './components/ProjectsList'
-import { LoadingSpinner } from './components/LoadingSpinner'
+import { UnifiedLoadingWelcome } from './components/UnifiedLoadingWelcome'
 import { ErrorMessage } from './components/ErrorMessage'
 import { ProjectsConfigModal } from './components/ProjectsConfigModal'
 import { ProjectDetailModal } from './components/ProjectDetailModal'
@@ -18,8 +20,21 @@ function App() {
   const { data, loading, error, refetch } = useDashboard()
   const app = useAppLogic(data?.projects || [])
   const { getById } = useMetaProjects()
+  const { user } = useCurrentUser()
+  const [hideUnified, setHideUnified] = useState(false)
+  const unifiedShownRef = useRef(false)
 
-  if (loading) return <LoadingSpinner message="Chargement du dashboard..." />
+  // Hide unified component after welcome completes
+  useEffect(() => {
+    if (!loading && data && user && user.firstname && user.lastname && !unifiedShownRef.current) {
+      unifiedShownRef.current = true
+      // Hide after 3s welcome + 600ms exit animation
+      setTimeout(() => {
+        setHideUnified(true)
+      }, 3600)
+    }
+  }, [loading, data, user])
+
   if (error) return <ErrorMessage error={error} onRetry={refetch} />
 
   const tabsConfig: Array<{ type: TabType; label: string; projects: any[] }> = [
@@ -72,29 +87,47 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      {/* Unified Loading Welcome Component */}
+      {!hideUnified && (
+        <UnifiedLoadingWelcome
+          isLoading={loading}
+          hasData={!!(data && user?.firstname && user?.lastname)}
+          firstname={user?.firstname || ""}
+          lastname={user?.lastname || ""}
+          onDismiss={() => setHideUnified(true)}
+        />
+      )}
+
       {/* Header */}
       <header className="bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700/50 sticky top-0 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
             {APP_NAME}
           </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => app.setIsConfigModalOpen(true)}
-              className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-all"
-              title="Gérer les projets"
-            >
-              <Settings size={18} />
-              Gérer
-            </button>
-            <button
-              onClick={refetch}
-              disabled={loading}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-all shadow-lg hover:shadow-blue-500/20"
-            >
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-              Rafraîchir
-            </button>
+          <div className="flex items-center gap-6">
+            {user && user.firstname && (
+              <span className="text-slate-300 font-medium">
+                {user.firstname} {user.lastname}
+              </span>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => app.setIsConfigModalOpen(true)}
+                className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-all"
+                title="Gérer les projets"
+              >
+                <Settings size={18} />
+                Gérer
+              </button>
+              <button
+                onClick={refetch}
+                disabled={loading}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-700 disabled:to-slate-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-all shadow-lg hover:shadow-blue-500/20"
+              >
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                Rafraîchir
+              </button>
+            </div>
           </div>
         </div>
       </header>
