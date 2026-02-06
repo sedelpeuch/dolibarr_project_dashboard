@@ -19,7 +19,7 @@ import type { TabType } from './types'
 function App() {
   const { data, loading, error, refetch } = useDashboard()
   const app = useAppLogic(data?.projects || [])
-  const { getById } = useMetaProjects()
+  const { metaProjects, getById } = useMetaProjects()
   const { user } = useCurrentUser()
   const [hideUnified, setHideUnified] = useState(false)
   const unifiedShownRef = useRef(false)
@@ -147,7 +147,7 @@ function App() {
           {ENABLE_META_PROJECTS && (
             <TabButton
               label="Meta-Projects"
-              count={0}
+              count={metaProjects.length}
               isActive={app.activeTab === 'meta-projects'}
               onClick={() => app.setActiveTab('meta-projects')}
             />
