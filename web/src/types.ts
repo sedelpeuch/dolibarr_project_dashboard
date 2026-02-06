@@ -88,3 +88,28 @@ export interface FilteredProjects {
   opportunities: Project[]
   rd: Project[]
 }
+export interface OpportunityStats {
+  open_count: number
+  won_count: number
+  lost_count: number
+  conversion_rate: number
+  total_open_amount: number
+  weighted_open_amount: number
+  potential_amount: number
+  lost_amount: number
+}
+
+export interface OpportunitySummary {
+  id: string
+  ref: string
+  title: string
+  opp_amount: number
+  opp_percent: number
+  opp_status?: string
+  status: string
+}
+
+export interface OpportunityStageGroup {
+  stage: string
+  opportunities: OpportunitySummary[]
+}

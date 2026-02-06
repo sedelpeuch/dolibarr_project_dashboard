@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
 from src.infrastructure import initialize_data
-from src.routes import dashboard, meta_projects, projects
+from src.routes import dashboard, meta_projects, opportunities, projects
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +39,7 @@ app.add_middleware(
 app.include_router(meta_projects.router)
 app.include_router(projects.router)
 app.include_router(dashboard.router)
+app.include_router(opportunities.router)
 
 
 if __name__ == "__main__":

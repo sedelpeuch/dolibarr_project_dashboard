@@ -11,6 +11,7 @@ import { ProjectsConfigModal } from './components/ProjectsConfigModal'
 import { ProjectDetailModal } from './components/ProjectDetailModal'
 import { MetaProjectsTab } from './components/MetaProjectsTab'
 import { MetaProjectDetailModal } from './components/MetaProjectDetailModal'
+import { OpportunitiesTab } from './components/OpportunitiesTab'
 import { TabButton } from './components/TabButton'
 import { APP_NAME, ENABLE_META_PROJECTS } from './config'
 import { ClosedSection } from './components/ClosedSection'
@@ -44,11 +45,19 @@ function App() {
   ]
 
   const renderTabContent = () => {
+    if (app.activeTab === 'opportunities') {
+      return <OpportunitiesTab />
+    }
+
+    if (app.activeTab === 'meta-projects') {
+      return <MetaProjectsTab allProjects={data?.projects || []} onViewMetaProject={(mp) => {
+        app.setSelectedMetaProjectId(mp.id)
+        app.setIsMetaProjectDetailOpen(true)
+      }} />
+    }
+
     const config = tabsConfig.find((c) => c.type === app.activeTab)
-    if (!config) return <MetaProjectsTab allProjects={data?.projects || []} onViewMetaProject={(mp) => {
-      app.setSelectedMetaProjectId(mp.id)
-      app.setIsMetaProjectDetailOpen(true)
-    }} />
+    if (!config) return null
 
     const openProjects = config.projects.filter((p) => p.status !== '2')
     const closedProjects = config.projects.filter((p) => p.status === '2')
