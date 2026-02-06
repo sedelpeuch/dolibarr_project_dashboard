@@ -2,6 +2,7 @@ import React from 'react'
 import { ExternalLink } from 'lucide-react'
 import { dolibarrLinks, UNITECH_MAP, UNITECH_COLORS } from '../config'
 import type { Project } from '../types'
+import { getPlannedDays } from '../utils'
 
 interface ProjectCardProps {
   project: Project
@@ -100,13 +101,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 {project.time_spent_total.toFixed(1)}⏱
               </span>
             )}
-            {project.wp_days + project.rd_days > 0 && (
+            {getPlannedDays(project) > 0 && (
               <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded font-semibold">
-                {(project.wp_days + project.rd_days).toFixed(1)}
+                {getPlannedDays(project).toFixed(1)}
               </span>
             )}
-            {project.wp_days === 0 &&
-              project.rd_days === 0 &&
+            {getPlannedDays(project) === 0 &&
               project.time_spent_total === 0 &&
               !project.is_opportunity && (
                 <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded font-semibold">

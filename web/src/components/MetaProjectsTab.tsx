@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Plus, Trash2, Edit2 } from "lucide-react";
 import { MetaProject, useMetaProjects } from "../hooks/useMetaProjects";
 import type { Project } from "../types";
-import { formatAmount } from "../utils";
+import { formatAmount, getPlannedDays } from "../utils";
 
 interface MetaProjectsTabProps {
   allProjects: Project[];
@@ -236,7 +236,7 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
             );
 
             const totalPlannedDays = includedProjects.reduce(
-              (sum, p) => sum + p.wp_days + p.rd_days,
+              (sum, p) => sum + getPlannedDays(p),
               0,
             );
 

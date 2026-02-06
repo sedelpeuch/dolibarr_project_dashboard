@@ -2,6 +2,8 @@
  * Reusable utility functions
  */
 
+import type { Project } from './types'
+
 export const formatDate = (timestamp: number): string => {
   if (!timestamp) return '-'
   const date = new Date(timestamp * 1000)
@@ -35,4 +37,22 @@ export const formatPaymentCondition = (code: string): string => {
     PT_FREE: 'Gratuit',
   }
   return conditions[code] || code
+}
+
+/**
+ * Calcule les jours planifiés dans l'ordre de priorité:
+ * 1. Si les tâches existent et leur somme > 0, utilise la somme des planned_workload
+ * 2. Sinon, utilise wp_days + rd_days
+ */
+export const getPlannedDays = (project: Project): number => {
+  if (project.tasks && project.tasks.length > 0) {
+    const taskPlannedDays = project.tasks.reduce(
+      (sum, task) => sum + (task.planned_workload || 0),
+      0,
+    )
+    if (taskPlannedDays > 0) {
+      return taskPlannedDays
+    }
+  }
+  return project.wp_days + project.rd_days
 }

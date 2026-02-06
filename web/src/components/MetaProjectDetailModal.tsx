@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { X, ExternalLink } from "lucide-react";
 import { MetaProject } from "../hooks/useMetaProjects";
 import type { Project } from "../types";
-import { formatAmount, formatDate, formatPaymentCondition } from "../utils";
+import { formatAmount, formatDate, formatPaymentCondition, getPlannedDays } from '../utils';
 import { dolibarrLinks } from "../config";
 
 interface MetaProjectDetailModalProps {
@@ -84,7 +84,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
 
       // Time
       timeData.total_time_spent += project.time_spent_total;
-      timeData.total_planned_days += project.wp_days + project.rd_days;
+      timeData.total_planned_days += getPlannedDays(project);
 
       // Tasks with project ref
       if (project.tasks) {
@@ -419,7 +419,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
                   <div className="bg-slate-800/50 rounded p-3">
                     <p className="text-xs text-slate-400 mb-1">Jours Planifiés</p>
                     <p className="text-lg font-semibold text-slate-200">
-                      {(selectedProject.wp_days + selectedProject.rd_days).toFixed(1)} j
+                      {getPlannedDays(selectedProject).toFixed(1)} j
                     </p>
                   </div>
                   <div className="bg-slate-800/50 rounded p-3">

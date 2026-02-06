@@ -6,6 +6,7 @@ import {
   formatDate,
   formatAmount,
   formatPaymentCondition,
+  getPlannedDays,
 } from "../utils";
 
 interface ProjectDetailModalProps {
@@ -644,14 +645,14 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                 <div>
                   <p className="text-xs text-slate-400 mb-1">Jours Planifiés</p>
                   <p className="text-lg font-semibold text-slate-200">
-                    {(project.wp_days + project.rd_days).toFixed(1)} j
+                    {getPlannedDays(project).toFixed(1)} j
                   </p>
                 </div>
               </div>
 
               {/* Consumption gauge */}
               {(() => {
-                const plannedDays = project.wp_days + project.rd_days;
+                const plannedDays = getPlannedDays(project);
                 const consumption =
                   plannedDays > 0
                     ? (project.time_spent_total / plannedDays) * 100
