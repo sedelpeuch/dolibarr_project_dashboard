@@ -1,6 +1,7 @@
 """Dashboard service - business logic for dashboard"""
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from src.infrastructure import DolibarrClient, ThreadSafeCache, load_data
@@ -9,6 +10,15 @@ logger = logging.getLogger(__name__)
 
 # Thread-safe cache for thirdparty data
 _thirdparty_cache = ThreadSafeCache()
+
+
+def _get_adaptive_workers(total_items: int) -> int:
+    """Calculate adaptive number of workers based on item count"""
+    if total_items < 5:
+        return 2
+    if total_items < 15:
+        return 5
+    return 3
 
 
 class DashboardService:
@@ -28,17 +38,29 @@ class DashboardService:
                 return {"projects": []}
 
             projects = []
-            for project_id in tracked_project_ids:
-                try:
-                    project_data = self._build_project_data(project_id)
-                    if project_data:
-                        projects.append(project_data)
-                except Exception as e:
-                    logger.warning(
-                        "Error processing project",
-                        extra={"context": {"project_id": project_id, "error": str(e)}},
-                    )
-                    continue
+            # Paralléliser la construction des données de projet avec workers adaptatifs
+            max_workers = _get_adaptive_workers(len(tracked_project_ids))
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Soumettre tous les projets
+                future_to_id = {
+                    executor.submit(self._build_project_data, project_id): project_id
+                    for project_id in tracked_project_ids
+                }
+                # Récupérer les résultats au fur et à mesure
+                for future in as_completed(future_to_id):
+                    project_id = future_to_id[future]
+                    try:
+                        project_data = future.result(timeout=30)
+                        if project_data:
+                            projects.append(project_data)
+                    except Exception as e:
+                        logger.warning(
+                            "Error processing project",
+                            extra={
+                                "context": {"project_id": project_id, "error": str(e)}
+                            },
+                        )
+                        continue
 
             return {"projects": projects}
 
@@ -106,17 +128,30 @@ class DashboardService:
         opp_amount = float(proj.get("opp_amount", 0) or 0)
         opp_percent = float(proj.get("opp_percent", 0) or 0)
 
-        # Get tasks and time spent
-        time_spent_total, tasks_data = self._get_tasks_data(project_id)
+        # Paralléliser les 3 appels API internes (tasks, invoices, proposals)
+        time_spent_total = 0.0
+        tasks_data = []
+        invoiced_amount = 0.0
+        invoices_data = []
+        proposals_data = []
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            tasks_future = executor.submit(self._get_tasks_data, project_id)
+            invoices_future = executor.submit(self._get_invoices_data, project_id)
+            proposals_future = executor.submit(self._get_proposals_data, project_id)
+
+            try:
+                time_spent_total, tasks_data = tasks_future.result(timeout=30)
+                invoiced_amount, invoices_data = invoices_future.result(timeout=30)
+                proposals_data = proposals_future.result(timeout=30)
+            except Exception as e:
+                logger.warning(
+                    "Error fetching project data",
+                    extra={"context": {"project_id": project_id, "error": str(e)}},
+                )
 
         # Extract timespent by user from tasks
         timespent_by_user = self._extract_timespent_by_user(tasks_data)
-
-        # Get invoices
-        invoiced_amount, invoices_data = self._get_invoices_data(project_id)
-
-        # Get proposals
-        proposals_data = self._get_proposals_data(project_id)
 
         return {
             "id": int(proj.get("id", 0)),
