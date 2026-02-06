@@ -214,6 +214,13 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
               .filter((p): p is Project => p !== undefined);
 
             // Calculate aggregations
+            const totalBudget = includedProjects.reduce((sum, p) => {
+              const displayAmount = p.is_opportunity
+                ? (p.opp_amount * p.opp_percent) / 100
+                : p.budget_amount;
+              return sum + displayAmount;
+            }, 0);
+
             const totalProposals = includedProjects.reduce((sum, p) => {
               return sum + (p.proposals?.reduce((s, prop) => s + (prop.total || 0), 0) || 0);
             }, 0);
@@ -290,7 +297,13 @@ export const MetaProjectsTab: React.FC<MetaProjectsTabProps> = ({
                 </div>
 
                 {/* KPIs */}
-                <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-5 grid grid-cols-2 sm:grid-cols-5 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Budgets</p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {formatAmount(totalBudget)} €
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs text-slate-500 mb-1">Propositions</p>
                     <p className="text-lg font-semibold text-slate-200">

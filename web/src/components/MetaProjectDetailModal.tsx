@@ -44,6 +44,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
   // Aggregate data from all projects
   const aggregated = useMemo(() => {
     const budgetData = {
+      total_budget: 0,
       total_proposals: 0,
       total_facture: 0,
       total_invoice: 0,
@@ -64,6 +65,10 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
 
     includedProjects.forEach((project) => {
       // Budget
+      const displayAmount = project.is_opportunity
+        ? (project.opp_amount * project.opp_percent) / 100
+        : project.budget_amount;
+      budgetData.total_budget += displayAmount;
       if (project.proposals) {
         budgetData.total_proposals += project.proposals.reduce(
           (sum, p) => sum + (p.total || 0),
@@ -286,7 +291,13 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
             <p className="text-xs text-slate-500 uppercase tracking-wide mb-4 font-semibold">
               Résumé Combiné
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
+              <div className="bg-slate-800/50 rounded p-4">
+                <p className="text-xs text-slate-400 mb-1">Budgets</p>
+                <p className="text-xl font-semibold text-slate-200">
+                  {formatAmount(aggregated.budgetData.total_budget)} €
+                </p>
+              </div>
               <div className="bg-slate-800/50 rounded p-4">
                 <p className="text-xs text-slate-400 mb-1">Propositions</p>
                 <p className="text-xl font-semibold text-slate-200">
@@ -382,6 +393,41 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
                   >
                     <ExternalLink size={20} />
                   </a>
+                </div>
+
+                {/* Info Générales */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-slate-800/50 rounded p-3">
+                    <p className="text-xs text-slate-400 mb-1">
+                      {selectedProject.is_opportunity ? "Opportunité" : "Budget"}
+                    </p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {formatAmount(
+                        selectedProject.is_opportunity
+                          ? (selectedProject.opp_amount * selectedProject.opp_percent) / 100
+                          : selectedProject.budget_amount
+                      )}{" "}
+                      €
+                    </p>
+                  </div>
+                  <div className="bg-slate-800/50 rounded p-3">
+                    <p className="text-xs text-slate-400 mb-1">Temps Passé</p>
+                    <p className="text-lg font-semibold text-amber-400">
+                      {selectedProject.time_spent_total.toFixed(1)} j
+                    </p>
+                  </div>
+                  <div className="bg-slate-800/50 rounded p-3">
+                    <p className="text-xs text-slate-400 mb-1">Jours Planifiés</p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {(selectedProject.wp_days + selectedProject.rd_days).toFixed(1)} j
+                    </p>
+                  </div>
+                  <div className="bg-slate-800/50 rounded p-3">
+                    <p className="text-xs text-slate-400 mb-1">Facturé</p>
+                    <p className="text-lg font-semibold text-slate-200">
+                      {formatAmount(selectedProject.total_invoiced)} €
+                    </p>
+                  </div>
                 </div>
 
                 {/* Propositions */}
