@@ -5,6 +5,7 @@ import { useAppLogic } from './hooks/useAppLogic'
 import { useMetaProjects } from './hooks/useMetaProjects'
 import { useCurrentUser } from './hooks/useCurrentUser'
 import { ProjectsList } from './components/ProjectsList'
+import { ProjectTimeline } from './components/ProjectTimeline'
 import { UnifiedLoadingWelcome } from './components/UnifiedLoadingWelcome'
 import { ErrorMessage } from './components/ErrorMessage'
 import { ProjectsConfigModal } from './components/ProjectsConfigModal'
@@ -64,6 +65,15 @@ function App() {
 
     return (
       <>
+        {/* Timeline de deadlines */}
+        <ProjectTimeline
+          projects={config.projects}
+          onProjectClick={(proj) => {
+            app.setSelectedProject(proj)
+            app.setIsDetailModalOpen(true)
+          }}
+        />
+
         {openProjects.length > 0 ? (
           <ProjectsList
             projects={openProjects}
