@@ -32,7 +32,7 @@ WORKDIR /app
 
 # Install Node and uv for web serving
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nodejs npm \
+    nodejs npm curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv fastapi uvicorn
