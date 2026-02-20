@@ -7,7 +7,10 @@ import {
   formatAmount,
   formatPaymentCondition,
   getPlannedDays,
+  computeElapsedPercent,
+  extractPaymentSchedule,
 } from "../utils";
+import ProgressBar from './ProgressBar'
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -47,52 +50,7 @@ interface PaymentSchedule {
   label: string;
 }
 
-const extractPaymentSchedule = (
-  code: string,
-  proposal: {
-    date_signature: number | null;
-    delivery_date: number | null;
-    total: number;
-  },
-): PaymentSchedule[] => {
-  if (!code) return [];
-
-  const schedule: PaymentSchedule[] = [];
-  const parts = code.replace("PaymentCondition", "").replace("PT_", "");
-
-  // Parse common patterns (XXYY format where XX% at signature, YY% at delivery)
-  if (parts.match(/^\d{4}$/)) {
-    const first = parseInt(parts.substring(0, 2));
-    const second = parseInt(parts.substring(2, 4));
-
-    if (first > 0 && proposal.date_signature) {
-      schedule.push({
-        percentage: first,
-        date: proposal.date_signature,
-        label: `${first}% signature`,
-      });
-    }
-
-    if (second > 0 && proposal.delivery_date) {
-      schedule.push({
-        percentage: second,
-        date: proposal.delivery_date,
-        label: `${second}% livraison`,
-      });
-    }
-  }
-
-  // If only delivery (100 or 000100)
-  if ((parts === "100" || parts === "000100") && proposal.delivery_date) {
-    schedule.push({
-      percentage: 100,
-      date: proposal.delivery_date,
-      label: "100% livraison",
-    });
-  }
-
-  return schedule;
-};
+// extractPaymentSchedule moved to ../utils
 
 const getStatusBadge = (
   status: string | number,
@@ -298,44 +256,18 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                 {project.date_end !== 0 && (
                   <div>
                     {(() => {
-                      const now = Math.floor(Date.now() / 1000);
-                      const progress = Math.min(
-                        100,
-                        Math.max(
-                          0,
-                          ((now - project.date_start) /
-                            (project.date_end - project.date_start)) *
-                            100,
-                        ),
-                      );
-                      const isOverdue = now > project.date_end;
+                      const progress = computeElapsedPercent(project.date_start, project.date_end)
+                      const isOverdue = Math.floor(Date.now() / 1000) > project.date_end
 
                       return (
                         <div>
                           <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-slate-400">
-                              {progress.toFixed(0)}%
-                            </span>
-                            {isOverdue && (
-                              <span className="text-red-400 font-semibold">
-                                Dépassé
-                              </span>
-                            )}
+                            <span className="text-slate-400">{progress.toFixed(0)}%</span>
+                            {isOverdue && <span className="text-red-400 font-semibold">Dépassé</span>}
                           </div>
-                          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${
-                                isOverdue
-                                  ? "bg-red-500"
-                                  : progress > 75
-                                    ? "bg-orange-500"
-                                    : "bg-blue-500"
-                              }`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
+                          <ProgressBar percent={progress} />
                         </div>
-                      );
+                      )
                     })()}
                   </div>
                 )}
@@ -377,41 +309,18 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                     {project.total_invoiced > 0 && displayAmount > 0 && (
                       <div className="mb-3">
                         {(() => {
-                          const progress = Math.min(
-                            100,
-                            (project.total_invoiced / displayAmount) * 100,
-                          );
-                          const isOverBudget =
-                            project.total_invoiced > displayAmount;
+                          const progress = Math.min(100, (project.total_invoiced / displayAmount) * 100)
+                          const isOverBudget = project.total_invoiced > displayAmount
 
                           return (
                             <div>
                               <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-slate-400">
-                                  {progress.toFixed(0)}%
-                                </span>
-                                {isOverBudget && (
-                                  <span className="text-red-400 font-semibold">
-                                    Dépassé
-                                  </span>
-                                )}
+                                <span className="text-slate-400">{progress.toFixed(0)}%</span>
+                                {isOverBudget && <span className="text-red-400 font-semibold">Dépassé</span>}
                               </div>
-                              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${
-                                    isOverBudget
-                                      ? "bg-red-500"
-                                      : progress > 85
-                                        ? "bg-orange-500"
-                                        : "bg-blue-500"
-                                  }`}
-                                  style={{
-                                    width: `${Math.min(100, progress)}%`,
-                                  }}
-                                />
-                              </div>
+                              <ProgressBar percent={Math.min(100, progress)} heightClass="h-1.5" />
                             </div>
-                          );
+                          )
                         })()}
                       </div>
                     )}
@@ -652,40 +561,20 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
 
               {/* Consumption gauge */}
               {(() => {
-                const plannedDays = getPlannedDays(project);
-                const consumption =
-                  plannedDays > 0
-                    ? (project.time_spent_total / plannedDays) * 100
-                    : 0;
-                const isOverConsumed = project.time_spent_total > plannedDays;
+                const plannedDays = getPlannedDays(project)
+                const consumption = plannedDays > 0 ? (project.time_spent_total / plannedDays) * 100 : 0
+                const isOverConsumed = project.time_spent_total > plannedDays
 
                 return (
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-slate-400">Consommation</span>
-                      <span className="text-slate-300 font-semibold">
-                        {consumption.toFixed(0)}%
-                      </span>
-                      {isOverConsumed && (
-                        <span className="text-red-400 font-semibold">
-                          Dépassé
-                        </span>
-                      )}
+                      <span className="text-slate-300 font-semibold">{consumption.toFixed(0)}%</span>
+                      {isOverConsumed && <span className="text-red-400 font-semibold">Dépassé</span>}
                     </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          isOverConsumed
-                            ? "bg-red-500"
-                            : consumption > 85
-                              ? "bg-orange-500"
-                              : "bg-blue-500"
-                        }`}
-                        style={{ width: `${Math.min(100, consumption)}%` }}
-                      />
-                    </div>
+                    <ProgressBar percent={Math.min(100, consumption)} />
                   </div>
-                );
+                )
               })()}
 
               {/* Tasks List */}
@@ -731,20 +620,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                               {task.planned_workload.toFixed(1)} j
                             </span>
                           </div>
-                          <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${
-                                isOverConsumed
-                                  ? "bg-red-500"
-                                  : consumption > 85
-                                    ? "bg-orange-500"
-                                    : "bg-blue-500"
-                              }`}
-                              style={{
-                                width: `${Math.min(100, consumption)}%`,
-                              }}
-                            />
-                          </div>
+                          <ProgressBar percent={Math.min(100, consumption)} heightClass="h-1.5" />
                         </div>
                       );
                     })}
@@ -775,14 +651,10 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                                 {user.total_duration.toFixed(1)} j
                               </span>
                             </div>
-                            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-blue-500 transition-all"
-                                style={{
-                                  width: `${Math.min(100, (user.total_duration / project.time_spent_total) * 100)}%`,
-                                }}
-                              />
-                            </div>
+                            <ProgressBar
+                              percent={Math.min(100, (user.total_duration / project.time_spent_total) * 100)}
+                              heightClass="h-1.5"
+                            />
                           </div>
                         ))}
                     </div>

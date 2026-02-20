@@ -1,4 +1,5 @@
 import React from 'react'
+import ProgressBar from './ProgressBar'
 
 export const RDBanner: React.FC = () => {
   const now = new Date()
@@ -19,12 +20,7 @@ export const RDBanner: React.FC = () => {
           <div className="text-slate-300 font-semibold">{percent.toFixed(0)}%</div>
         </div>
 
-        <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-          <div
-            className={`h-full rounded-full ${percent > 85 ? 'bg-orange-500' : 'bg-blue-500'}`}
-            style={{ width: `${percent}%` }}
-          />
-        </div>
+        <ProgressBar percent={percent} />
       </div>
 
       <hr className="border-slate-700 mt-4 mb-6" />
