@@ -14,6 +14,7 @@ import { MetaProjectsTab } from './components/MetaProjectsTab'
 import { MetaProjectDetailModal } from './components/MetaProjectDetailModal'
 import { OpportunitiesTab } from './components/OpportunitiesTab'
 import { TabButton } from './components/TabButton'
+import { RDTab } from './components/RDTab'
 import { APP_NAME, ENABLE_META_PROJECTS } from './config'
 import { ClosedSection } from './components/ClosedSection'
 import type { TabType } from './types'
@@ -59,6 +60,21 @@ function App() {
 
     const config = tabsConfig.find((c) => c.type === app.activeTab)
     if (!config) return null
+
+    // If this is the RD tab, render the dedicated RDTab (no timeline)
+    if (config.type === 'rd') {
+      return (
+        <RDTab
+          projects={config.projects}
+          showClosed={app.showClosed}
+          onToggleClosed={() => app.setShowClosed(!app.showClosed)}
+          onProjectClick={(proj) => {
+            app.setSelectedProject(proj)
+            app.setIsDetailModalOpen(true)
+          }}
+        />
+      )
+    }
 
     const openProjects = config.projects.filter((p) => p.status !== '2')
     const closedProjects = config.projects.filter((p) => p.status === '2')
