@@ -2,7 +2,8 @@ import React, { useMemo, useState, useEffect } from "react";
 import { X, ExternalLink } from "lucide-react";
 import { MetaProject } from "../hooks/useMetaProjects";
 import type { Project } from "../types";
-import { formatAmount, formatDate, formatPaymentCondition, getPlannedDays } from '../utils';
+import { formatAmount, formatDate, formatPaymentCondition, getPlannedDays, extractPaymentSchedule } from '../utils';
+import ProgressBar from './ProgressBar'
 import { dolibarrLinks } from "../config";
 
 interface MetaProjectDetailModalProps {
@@ -179,49 +180,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
     }
   };
 
-  const extractPaymentSchedule = (
-    code: string,
-    proposal: {
-      date_signature: number | null;
-      delivery_date: number | null;
-      total: number;
-    },
-  ) => {
-    if (!code) return [];
-    const schedule: any[] = [];
-    const parts = code.replace("PaymentCondition", "").replace("PT_", "");
-
-    if (parts.match(/^\d{4}$/)) {
-      const first = parseInt(parts.substring(0, 2));
-      const second = parseInt(parts.substring(2, 4));
-
-      if (first > 0 && proposal.date_signature) {
-        schedule.push({
-          percentage: first,
-          date: proposal.date_signature,
-          label: `${first}% signature`,
-        });
-      }
-
-      if (second > 0 && proposal.delivery_date) {
-        schedule.push({
-          percentage: second,
-          date: proposal.delivery_date,
-          label: `${second}% livraison`,
-        });
-      }
-    }
-
-    if ((parts === "100" || parts === "000100") && proposal.delivery_date) {
-      schedule.push({
-        percentage: 100,
-        date: proposal.delivery_date,
-        label: "100% livraison",
-      });
-    }
-
-    return schedule;
-  };
+  // extractPaymentSchedule moved to ../utils
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
@@ -325,7 +284,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
             </div>
 
             {/* Consumption gauge */}
-            <div className="bg-slate-800/50 rounded p-4">
+              <div className="bg-slate-800/50 rounded p-4">
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-slate-400">Consommation</span>
                 <span className="text-slate-300 font-semibold">
@@ -335,18 +294,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
                   <span className="text-red-400 font-semibold">Dépassé</span>
                 )}
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    isOverConsumed
-                      ? "bg-red-500"
-                      : consumption > 85
-                        ? "bg-orange-500"
-                        : "bg-blue-500"
-                  }`}
-                  style={{ width: `${Math.min(100, consumption)}%` }}
-                />
-              </div>
+              <ProgressBar percent={Math.min(100, consumption)} heightClass="h-3" />
             </div>
           </div>
 
@@ -668,20 +616,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
                               </span>
                             </div>
 
-                            <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden mt-auto">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  isOver
-                                    ? "bg-red-500"
-                                    : consumption > 85
-                                      ? "bg-orange-500"
-                                      : "bg-blue-500"
-                                }`}
-                                style={{
-                                  width: `${Math.min(100, consumption)}%`,
-                                }}
-                              />
-                            </div>
+                            <ProgressBar percent={Math.min(100, consumption)} heightClass="h-2" />
                           </div>
                         );
                       })}
@@ -722,12 +657,7 @@ export const MetaProjectDetailModal: React.FC<MetaProjectDetailModalProps> = ({
                                     {user.total_duration.toFixed(1)} j
                                   </span>
                                 </div>
-                                <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-                                  <div
-                                    className="h-full bg-blue-500 rounded-full transition-all"
-                                    style={{ width: `${percentage}%` }}
-                                  />
-                                </div>
+                                <ProgressBar percent={percentage} heightClass="h-2" />
                               </div>
                             );
                           })}

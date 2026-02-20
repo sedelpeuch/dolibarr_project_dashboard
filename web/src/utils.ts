@@ -56,3 +56,46 @@ export const getPlannedDays = (project: Project): number => {
   }
   return project.wp_days + project.rd_days
 }
+
+export const computeElapsedPercent = (startTs: number, endTs: number, now?: Date): number => {
+  if (!startTs || !endTs || endTs <= startTs) return 0
+  const n = now ? Math.floor(now.getTime() / 1000) : Math.floor(Date.now() / 1000)
+  const percent = ((n - startTs) / (endTs - startTs)) * 100
+  return Math.min(100, Math.max(0, percent))
+}
+
+export const computeYearPercent = (year: number, now?: Date): number => {
+  const n = now || new Date()
+  const start = new Date(year, 0, 1).getTime()
+  const end = new Date(year + 1, 0, 1).getTime()
+  const percent = ((n.getTime() - start) / (end - start)) * 100
+  return Math.min(100, Math.max(0, percent))
+}
+
+export const extractPaymentSchedule = (
+  code: string,
+  proposal: { date_signature: number | null; delivery_date: number | null; total: number },
+): Array<{ percentage: number; date: number | null; label: string }> => {
+  if (!code) return []
+
+  const schedule: Array<{ percentage: number; date: number | null; label: string }> = []
+  const parts = code.replace('PaymentCondition', '').replace('PT_', '')
+
+  if (parts.match(/^\d{4}$/)) {
+    const first = parseInt(parts.substring(0, 2))
+    const second = parseInt(parts.substring(2, 4))
+
+    if (first > 0 && proposal.date_signature) {
+      schedule.push({ percentage: first, date: proposal.date_signature, label: `${first}% signature` })
+    }
+    if (second > 0 && proposal.delivery_date) {
+      schedule.push({ percentage: second, date: proposal.delivery_date, label: `${second}% livraison` })
+    }
+  }
+
+  if ((parts === '100' || parts === '000100') && proposal.delivery_date) {
+    schedule.push({ percentage: 100, date: proposal.delivery_date, label: '100% livraison' })
+  }
+
+  return schedule
+}
