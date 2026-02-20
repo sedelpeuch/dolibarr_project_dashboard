@@ -4,7 +4,18 @@
 
 // App metadata
 export const APP_NAME = 'Dolibarr Dashboard'
-export const API_URL =  'http://localhost:41587/api'
+
+// Build API URL dynamically from current location
+const getAPIUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  let url = window.location.href
+  url = url.substring(0, url.lastIndexOf(':'))
+  return url + ':41587/api'
+}
+
+export const API_URL = getAPIUrl()
 export const ENABLE_META_PROJECTS = true
 
 // Dolibarr URL loaded from API at runtime
