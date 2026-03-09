@@ -662,19 +662,6 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                 )}
             </div>
 
-            {/* Description */}
-            {project.description && (
-              <div className="border-t border-slate-700/50 pt-6">
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">
-                  Description
-                </p>
-                <div
-                  className="text-slate-300 text-sm prose prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: project.description }}
-                />
-              </div>
-            )}
-
             {/* Link to Dolibarr */}
             <div className="border-t border-slate-700/50 pt-6">
               <a

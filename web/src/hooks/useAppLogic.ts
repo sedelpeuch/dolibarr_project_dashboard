@@ -12,6 +12,7 @@ export function useAppLogic(projects: Project[] = []) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedMetaProjectId, setSelectedMetaProjectId] = useState<string | null>(null)
   const [isMetaProjectDetailOpen, setIsMetaProjectDetailOpen] = useState(false)
+  const [isRealProgressModalOpen, setIsRealProgressModalOpen] = useState(false)
 
   // Filter projects by type
   const filtered = filterProjectsByType(projects)
@@ -43,6 +44,8 @@ export function useAppLogic(projects: Project[] = []) {
     setSelectedMetaProjectId,
     isMetaProjectDetailOpen,
     setIsMetaProjectDetailOpen,
+    isRealProgressModalOpen,
+    setIsRealProgressModalOpen,
     filtered,
     getTabProjects,
   }
