@@ -57,7 +57,7 @@ class DashboardService:
                         logger.warning(
                             "Error processing project",
                             extra={
-                                "context": {"project_id": project_id, "error": str(e)}
+                                "context": {"project_id": project_id, "error": str(e)},
                             },
                         )
                         continue
@@ -230,7 +230,7 @@ class DashboardService:
             }
 
     def _get_tasks_data(self, project_id: int) -> tuple[float, list[dict]]:
-        """Get tasks and calculate total time spent"""
+        """Get tasks and calculate total time spent, including timespent details with dates"""
         time_spent_total = 0.0
         tasks_data = []
 
@@ -242,11 +242,44 @@ class DashboardService:
                 for task in tasks:
                     if not isinstance(task, dict):
                         continue
+
                     duration_effective = task.get("duration_effective", 0) or 0
+                    task_id = task.get("id") or task.get("rowid")
+
                     try:
                         duration_float = float(duration_effective)
                         time_spent_total += duration_float
-                        task_id = task.get("id") or task.get("rowid")
+
+                        # Extract timespent lines with dates
+                        timespent_lines = []
+                        lines = task.get("lines", [])
+                        if isinstance(lines, list):
+                            for line in lines:
+                                if not isinstance(line, dict):
+                                    continue
+
+                                timespent_date = line.get("timespent_line_date")
+                                timespent_duration = line.get(
+                                    "timespent_line_duration", 0
+                                )
+                                timespent_user_id = line.get("timespent_line_fk_user")
+
+                                if timespent_date and timespent_duration:
+                                    try:
+                                        timespent_lines.append({
+                                            "id": line.get("timespent_line_id"),
+                                            "date": int(timespent_date),
+                                            "duration": float(timespent_duration),
+                                            "user_id": int(timespent_user_id)
+                                            if timespent_user_id
+                                            else None,
+                                            "user_name": f"User {timespent_user_id}"
+                                            if timespent_user_id
+                                            else "Unknown",
+                                        })
+                                    except (ValueError, TypeError):
+                                        continue
+
                         tasks_data.append(
                             {
                                 "id": int(task_id) if task_id else None,
@@ -256,6 +289,7 @@ class DashboardService:
                                 "planned_workload": float(
                                     task.get("planned_workload", 0) or 0,
                                 ),
+                                "timespent_lines": timespent_lines,
                             },
                         )
                     except (ValueError, TypeError):

@@ -30,12 +30,21 @@ export interface Proposal {
   lines: ProposalLine[]
 }
 
+export interface TimespentLine {
+  id: number
+  date: number
+  duration: number
+  user_id: number
+  user_name: string
+}
+
 export interface Task {
   id: number
   ref: string
   label: string
   duration_effective: number
   planned_workload: number
+  timespent_lines?: TimespentLine[]
 }
 
 export interface TimespentByUser {
