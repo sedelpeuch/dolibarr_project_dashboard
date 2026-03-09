@@ -63,6 +63,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
           {/* Badges - right aligned */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
+            {project.isCoordinator && (
+              <span
+                className="bg-blue-500/30 text-blue-300 text-xs px-2 py-1 rounded font-semibold whitespace-nowrap shadow-lg"
+                title="Vous êtes coordinateur"
+              >
+                👤
+              </span>
+            )}
             {unittechs.map((ut) => (
               <span
                 key={ut.badge}

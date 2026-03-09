@@ -84,6 +84,7 @@ export interface Project {
   proposals: Proposal[]
   tasks: Task[]
   timespent_by_user: TimespentByUser[]
+  isCoordinator?: boolean
 }
 
 export interface DashboardData {
