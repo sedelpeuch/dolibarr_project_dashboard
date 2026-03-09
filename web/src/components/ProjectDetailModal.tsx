@@ -16,6 +16,7 @@ interface ProjectDetailModalProps {
   project: Project | null;
   isOpen: boolean;
   onClose: () => void;
+  onToggleCoordinator?: (projectId: number, isCoordinator: boolean) => void;
 }
 
 const getUnitechBadge = (unittech: number): string => {
@@ -102,6 +103,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   project,
   isOpen,
   onClose,
+  onToggleCoordinator,
 }) => {
   const [expandedLines, setExpandedLines] = useState<Set<string>>(new Set());
 
@@ -156,6 +158,19 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
               >
                 {statusBadge.text}
               </span>
+              {onToggleCoordinator && (
+                <button
+                  onClick={() => onToggleCoordinator(project.id, !project.isCoordinator)}
+                  className={`text-xs px-3 py-1 rounded font-medium whitespace-nowrap transition-colors ${
+                    project.isCoordinator
+                      ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
+                      : 'bg-slate-700/50 text-slate-400 hover:bg-slate-700'
+                  }`}
+                  title={project.isCoordinator ? 'Vous êtes coordinateur' : 'Cliquez pour marquer comme coordinateur'}
+                >
+                  {project.isCoordinator ? '👤 Coordinateur' : 'Contributeur'}
+                </button>
+              )}
               <a
                 href={`https://gaaspard.catie.fr/projet/card.php?id=${project.id}`}
                 target="_blank"

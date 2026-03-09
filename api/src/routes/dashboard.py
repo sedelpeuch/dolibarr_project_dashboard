@@ -3,9 +3,11 @@
 import logging
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from src.config import settings
 from src.infrastructure import DolibarrClient
+from src.infrastructure.storage import load_data, save_data
 from src.services import DashboardService
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,12 @@ dolibarr = DolibarrClient(settings.dolibarr_url, settings.doliapikey)
 
 # Initialize dashboard service
 dashboard_service = DashboardService(dolibarr)
+
+
+class CoordinatorProjectsRequest(BaseModel):
+    """Request model for saving coordinator projects"""
+
+    coordinatorProjects: list[int]
 
 
 @router.get("/health")
@@ -82,4 +90,33 @@ def get_current_user():
         raise
     except Exception as e:
         logger.error(f"Error loading current user: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/coordinator-projects")
+def get_coordinator_projects():
+    """Get list of project IDs where user is coordinator"""
+    try:
+        data = load_data()
+        # Initialize coordinatorProjects if it doesn't exist
+        if "coordinatorProjects" not in data:
+            data["coordinatorProjects"] = []
+            save_data(data)
+        return {"coordinatorProjects": data.get("coordinatorProjects", [])}
+    except Exception as e:
+        logger.error(f"Error loading coordinator projects: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/coordinator-projects")
+def save_coordinator_projects(request: CoordinatorProjectsRequest):
+    """Save list of project IDs where user is coordinator"""
+    try:
+        data = load_data()
+        data["coordinatorProjects"] = request.coordinatorProjects
+        save_data(data)
+
+        return {"success": True, "coordinatorProjects": data["coordinatorProjects"]}
+    except Exception as e:
+        logger.error(f"Error saving coordinator projects: {e}")
         raise HTTPException(status_code=500, detail=str(e))

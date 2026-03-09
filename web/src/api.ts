@@ -20,6 +20,23 @@ export const apiService = {
     const response = await api.get('/opportunities/pipeline')
     return response.data
   },
+  getCoordinatorProjects: async (): Promise<number[]> => {
+    try {
+      const response = await api.get('/coordinator-projects')
+      return response.data.coordinatorProjects || []
+    } catch (error) {
+      console.error('Error loading coordinator projects:', error)
+      return []
+    }
+  },
+  saveCoordinatorProjects: async (projectIds: number[]): Promise<void> => {
+    try {
+      await api.post('/coordinator-projects', { coordinatorProjects: projectIds })
+    } catch (error) {
+      console.error('Error saving coordinator projects:', error)
+      throw error
+    }
+  },
 }
 
 export default api

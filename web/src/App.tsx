@@ -19,14 +19,50 @@ import { APP_NAME, ENABLE_META_PROJECTS } from './config'
 import { ClosedSection } from './components/ClosedSection'
 import ProjectsRealProgressModal from './components/ProjectsRealProgressModal'
 import type { TabType } from './types'
+import { apiService } from './api'
 
 function App() {
   const { data, loading, error, refetch } = useDashboard()
-  const app = useAppLogic(data?.projects || [])
   const { metaProjects, getById } = useMetaProjects()
   const { user } = useCurrentUser()
   const [hideUnified, setHideUnified] = useState(false)
+  const [coordinatorProjects, setCoordinatorProjects] = useState<number[]>([])
   const unifiedShownRef = useRef(false)
+
+  // Load coordinator projects from API
+  useEffect(() => {
+    const loadCoordinatorProjects = async () => {
+      const projects = await apiService.getCoordinatorProjects()
+      setCoordinatorProjects(projects)
+    }
+    loadCoordinatorProjects()
+  }, [])
+
+  // Mark projects as coordinator if they're in coordinatorProjects
+  const projectsWithCoordinator = (data?.projects || []).map((project) => ({
+    ...project,
+    isCoordinator: coordinatorProjects.includes(project.id),
+  }))
+
+  const app = useAppLogic(projectsWithCoordinator)
+
+  const updateCoordinatorStatus = async (projectId: number, isCoordinator: boolean) => {
+    const newList = isCoordinator
+      ? [...coordinatorProjects, projectId]
+      : coordinatorProjects.filter((id) => id !== projectId)
+    setCoordinatorProjects(newList)
+    await apiService.saveCoordinatorProjects(newList)
+  }
+
+  // Update selected project when coordinator status changes
+  useEffect(() => {
+    if (app.selectedProject) {
+      const updatedProject = projectsWithCoordinator.find((p) => p.id === app.selectedProject!.id)
+      if (updatedProject && updatedProject.isCoordinator !== app.selectedProject.isCoordinator) {
+        app.setSelectedProject(updatedProject)
+      }
+    }
+  }, [coordinatorProjects, projectsWithCoordinator])
 
   // Hide unified component after welcome completes
   useEffect(() => {
@@ -213,9 +249,10 @@ function App() {
           app.setIsDetailModalOpen(false)
           app.setSelectedProject(null)
         }}
+        onToggleCoordinator={updateCoordinatorStatus}
       />
       <ProjectsRealProgressModal
-        projects={app.filtered.projects}
+        projects={app.filtered.projects.filter((p) => p.isCoordinator)}
         isOpen={app.isRealProgressModalOpen}
         onClose={() => app.setIsRealProgressModalOpen(false)}
       />
