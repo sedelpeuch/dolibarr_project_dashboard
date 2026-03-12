@@ -21,7 +21,7 @@ const STAGES_ORDER = [
 ]
 
 const stageConfig: Record<string, { gradient: string; iconColor: string; probability: number }> = {
-  'Prospection': { gradient: 'from-blue-500/20 to-blue-600/20 border-blue-500/40', iconColor: 'text-blue-400', probability: 10 },
+  'Prospection': { gradient: 'from-blue-500/20 to-blue-600/20 border-blue-500/40', iconColor: 'text-blue-400', probability: 0 },
   'Qualification': { gradient: 'from-cyan-500/20 to-cyan-600/20 border-cyan-500/40', iconColor: 'text-cyan-400', probability: 10 },
   'Proposition': { gradient: 'from-indigo-500/20 to-indigo-600/20 border-indigo-500/40', iconColor: 'text-indigo-400', probability: 30 },
   'Négociation': { gradient: 'from-amber-500/20 to-amber-600/20 border-amber-500/40', iconColor: 'text-amber-400', probability: 50 },

@@ -66,7 +66,9 @@ class OpportunitiesService:
         ]
 
         # Filtrer les opps
-        open_opps = [o for o in opps if o.get("status") == "1"]
+        open_opps = [
+            o for o in opps if not self._is_opp_lost(o) and o.get("opp_status") != "6"
+        ]
         lost_opps = [o for o in opps if self._is_opp_lost(o)]
         not_lost_opps = [o for o in opps if o not in lost_opps]  # Potentiel de gain
 
@@ -142,14 +144,26 @@ class OpportunitiesService:
             "7": "Perdue",
         }
 
+        # Ordre des étapes pour l'affichage
+        stage_order = [
+            "Prospection",
+            "Qualification",
+            "Proposition",
+            "Négociation",
+            "En attente",
+            "Perdue",
+        ]
+
         # Grouper par étape
         stages = {}
         for opp in opps:
-            # Si l'opp est perdue/clôturée, la router vers Perdue
-            if self._is_opp_lost(opp):
-                stage_code = "7"
-            else:
-                stage_code = opp.get("opp_status") or "1"
+            # Déterminer le stage code basé UNIQUEMENT sur opp_status
+            stage_code = opp.get("opp_status") or "1"
+
+            # Si opp_status est 6 (Gagnée), ne pas l'afficher dans le pipeline
+            if stage_code == "6":
+                continue
+
             stage_name = stage_names.get(str(stage_code), f"Étape {stage_code}")
 
             if stage_name not in stages:
@@ -167,10 +181,15 @@ class OpportunitiesService:
                 },
             )
 
+        # Trier les opportunités dans chaque étape par opp_status
+        for stage_name in stages:
+            stages[stage_name].sort(key=lambda x: x.get("opp_status") or "1")
+
         return {
             "pipeline": [
-                {"stage": stage_name, "opportunities": opps}
-                for stage_name, opps in sorted(stages.items())
+                {"stage": stage_name, "opportunities": stages[stage_name]}
+                for stage_name in stage_order
+                if stage_name in stages
             ],
         }
 
@@ -189,8 +208,4 @@ class OpportunitiesService:
     @staticmethod
     def _is_opp_lost(opp: dict) -> bool:
         """Déterminer si une opp est perdue"""
-        return (
-            opp.get("opp_status") == "7"
-            or opp.get("status") == "2"  # clôturé = perdu
-            or (opp.get("opp_percent") and float(opp.get("opp_percent", 0)) == 0.0)
-        )
+        return opp.get("opp_status") == "7"
