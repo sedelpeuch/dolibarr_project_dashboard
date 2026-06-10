@@ -15,6 +15,7 @@ import { MetaProjectDetailModal } from './components/MetaProjectDetailModal'
 import { OpportunitiesTab } from './components/OpportunitiesTab'
 import { TabButton } from './components/TabButton'
 import { RDTab } from './components/RDTab'
+import { WorkloadTab } from './components/WorkloadTab'
 import { APP_NAME, ENABLE_META_PROJECTS } from './config'
 import { ClosedSection } from './components/ClosedSection'
 import ProjectsRealProgressModal from './components/ProjectsRealProgressModal'
@@ -93,6 +94,10 @@ function App() {
         app.setSelectedMetaProjectId(mp.id)
         app.setIsMetaProjectDetailOpen(true)
       }} />
+    }
+
+    if (app.activeTab === 'workload') {
+      return <WorkloadTab allProjects={data?.projects || []} />
     }
 
     const config = tabsConfig.find((c) => c.type === app.activeTab)
@@ -234,6 +239,11 @@ function App() {
               onClick={() => app.setActiveTab('meta-projects')}
             />
           )}
+          <TabButton
+            label="Plan de charge"
+            isActive={app.activeTab === 'workload'}
+            onClick={() => app.setActiveTab('workload')}
+          />
         </div>
       </div>
 

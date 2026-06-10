@@ -91,7 +91,32 @@ export interface DashboardData {
   projects: Project[]
 }
 
-export type TabType = 'projects' | 'opportunities' | 'rd' | 'meta-projects'
+export interface VacationPeriod {
+  id: string
+  start: string // YYYY-MM-DD
+  end: string   // YYYY-MM-DD
+  label?: string
+}
+
+export interface ProjectPeriod {
+  start: string // YYYY-MM-DD
+  end: string   // YYYY-MM-DD
+  days: number
+}
+
+export interface ProjectParticipation {
+  project_id: number
+  days: number
+  active: boolean
+  periods?: ProjectPeriod[]
+}
+
+export interface WorkloadConfig {
+  participations: ProjectParticipation[]
+  vacation_periods: VacationPeriod[]
+}
+
+export type TabType = 'projects' | 'opportunities' | 'rd' | 'meta-projects' | 'workload'
 
 export interface FilteredProjects {
   projects: Project[]

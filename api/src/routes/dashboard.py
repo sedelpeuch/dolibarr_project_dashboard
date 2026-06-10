@@ -27,6 +27,39 @@ class CoordinatorProjectsRequest(BaseModel):
     coordinatorProjects: list[int]
 
 
+class ProjectPeriod(BaseModel):
+    """A work period on a project"""
+
+    start: str
+    end: str
+    days: float
+
+
+class ParticipationItem(BaseModel):
+    """A single project participation entry"""
+
+    project_id: int
+    days: float
+    active: bool = True
+    periods: list[ProjectPeriod] | None = None
+
+
+class VacationPeriod(BaseModel):
+    """A continuous vacation period"""
+
+    id: str
+    start: str
+    end: str
+    label: str | None = None
+
+
+class WorkloadConfigRequest(BaseModel):
+    """Request model for saving workload config"""
+
+    participations: list[ParticipationItem]
+    vacation_periods: list[VacationPeriod] = []
+
+
 @router.get("/health")
 def health_check():
     """Health check endpoint"""
@@ -119,4 +152,31 @@ def save_coordinator_projects(request: CoordinatorProjectsRequest):
         return {"success": True, "coordinatorProjects": data["coordinatorProjects"]}
     except Exception as e:
         logger.error(f"Error saving coordinator projects: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/workload")
+def get_workload():
+    """Get workload config (project participations + vacations)"""
+    try:
+        data = load_data()
+        return data.get("workload", {"participations": [], "vacation_periods": []})
+    except Exception as e:
+        logger.error(f"Error loading workload config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/workload")
+def save_workload(request: WorkloadConfigRequest):
+    """Save workload config (project participations + vacations)"""
+    try:
+        data = load_data()
+        data["workload"] = {
+            "participations": [p.model_dump() for p in request.participations],
+            "vacation_periods": [v.model_dump() for v in request.vacation_periods],
+        }
+        save_data(data)
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Error saving workload config: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import { API_URL } from './config'
-import type { DashboardData, OpportunityStats, OpportunityStageGroup } from './types'
+import type { DashboardData, OpportunityStats, OpportunityStageGroup, WorkloadConfig } from './types'
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -34,6 +34,23 @@ export const apiService = {
       await api.post('/coordinator-projects', { coordinatorProjects: projectIds })
     } catch (error) {
       console.error('Error saving coordinator projects:', error)
+      throw error
+    }
+  },
+  getWorkload: async (): Promise<WorkloadConfig> => {
+    try {
+      const response = await api.get('/workload')
+      return response.data
+    } catch (error) {
+      console.error('Error loading workload config:', error)
+      return { participations: [], vacations: [] }
+    }
+  },
+  saveWorkload: async (config: WorkloadConfig): Promise<void> => {
+    try {
+      await api.post('/workload', config)
+    } catch (error) {
+      console.error('Error saving workload config:', error)
       throw error
     }
   },
