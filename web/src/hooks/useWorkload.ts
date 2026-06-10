@@ -43,8 +43,8 @@ export function useWorkload() {
 
       // Ensure active field on all participations
       data.participations = data.participations.map((p) => ({
-        active: true,
         ...p,
+        active: p.active ?? true,
       }))
 
       setConfig(data)

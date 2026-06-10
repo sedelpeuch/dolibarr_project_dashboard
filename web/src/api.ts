@@ -43,7 +43,7 @@ export const apiService = {
       return response.data
     } catch (error) {
       console.error('Error loading workload config:', error)
-      return { participations: [], vacations: [] }
+      return { participations: [], vacation_periods: [] }
     }
   },
   saveWorkload: async (config: WorkloadConfig): Promise<void> => {
