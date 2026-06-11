@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.config import settings
-from src.infrastructure import DolibarrClient
+from src.infrastructure import DolibarrClient, GaaspardClient
 from src.infrastructure.storage import load_data, save_data
 from src.services import DashboardService
 
@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["dolibarr"])
 
-# Initialize Dolibarr client
+# Initialize clients
 dolibarr = DolibarrClient(settings.dolibarr_url, settings.doliapikey)
+gaaspard = GaaspardClient(settings.dolibarr_url, settings.doliapikey)
 
 # Initialize dashboard service
-dashboard_service = DashboardService(dolibarr)
+dashboard_service = DashboardService(dolibarr, gaaspard)
 
 
 class CoordinatorProjectsRequest(BaseModel):
@@ -128,14 +129,16 @@ def get_current_user():
 
 @router.get("/api/coordinator-projects")
 def get_coordinator_projects():
-    """Get list of project IDs where user is coordinator"""
+    """Get list of project IDs where current user is coordinator (derived from Gaaspard)"""
     try:
-        data = load_data()
-        # Initialize coordinatorProjects if it doesn't exist
-        if "coordinatorProjects" not in data:
-            data["coordinatorProjects"] = []
-            save_data(data)
-        return {"coordinatorProjects": data.get("coordinatorProjects", [])}
+        all_projects = gaaspard.get_all_projects(include_closed=True)
+        user_id = settings.current_user_id
+        coordinator_ids = [
+            int(p["rowid"])
+            for p in all_projects
+            if any(c.get("id") == user_id for c in p.get("coordinators", []))
+        ]
+        return {"coordinatorProjects": coordinator_ids}
     except Exception as e:
         logger.error(f"Error loading coordinator projects: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -143,12 +146,11 @@ def get_coordinator_projects():
 
 @router.post("/api/coordinator-projects")
 def save_coordinator_projects(request: CoordinatorProjectsRequest):
-    """Save list of project IDs where user is coordinator"""
+    """Manual override — kept for backward compat but Gaaspard is source of truth"""
     try:
         data = load_data()
         data["coordinatorProjects"] = request.coordinatorProjects
         save_data(data)
-
         return {"success": True, "coordinatorProjects": data["coordinatorProjects"]}
     except Exception as e:
         logger.error(f"Error saving coordinator projects: {e}")
@@ -179,4 +181,18 @@ def save_workload(request: WorkloadConfigRequest):
         return {"success": True}
     except Exception as e:
         logger.error(f"Error saving workload config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/person-report")
+def get_person_report(year: int | None = None):
+    """Get person report (monthly pointage + capacity) from Gaaspard."""
+    import datetime
+
+    if not year:
+        year = datetime.date.today().year
+    try:
+        return gaaspard.get_person_report(settings.current_user_id, f"{year}-01-01")
+    except Exception as e:
+        logger.error(f"Error loading person report: {e}")
         raise HTTPException(status_code=500, detail=str(e))

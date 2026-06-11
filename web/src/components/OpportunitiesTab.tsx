@@ -14,8 +14,7 @@ export const OpportunitiesTab: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
   const handleOpportunityClick = (opp: OpportunitySummary) => {
-    // Trouver le projet complet dans les données du dashboard
-    const fullProject = dashboardData?.projects.find((p) => p.id.toString() === opp.id)
+    const fullProject = dashboardData?.projects.find((p) => p.id.toString() === opp.id.toString())
     if (fullProject) {
       setSelectedProject(fullProject)
       setIsDetailModalOpen(true)

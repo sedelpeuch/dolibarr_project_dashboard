@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, ExternalLink } from "lucide-react";
+import { X, ExternalLink, AlertTriangle, Users } from "lucide-react";
 import type { Project } from "../types";
 import { dolibarrLinks } from "../config";
 import {
@@ -676,6 +676,106 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
                   </div>
                 )}
             </div>
+
+            {/* Avancement Gaaspard */}
+            {(project.real_progress !== null || project.declared_progress !== null || project.last_validated_progress !== null) && !project.is_opportunity && (
+              <div className="border-t border-slate-700/50 pt-6">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Avancement</p>
+                <div className="space-y-3">
+                  {project.real_progress !== null && (
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-400">Réel (pointage)</span>
+                        <span className="text-emerald-400 font-semibold">{project.real_progress.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(project.real_progress, 100)}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  {project.declared_progress !== null && (
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-400">Déclaré</span>
+                        <span className="text-blue-400 font-semibold">{project.declared_progress.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(project.declared_progress, 100)}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  {project.last_validated_progress !== null && (
+                    <div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-400">Dernier validé</span>
+                        <span className="text-purple-400 font-semibold">{project.last_validated_progress.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.min(project.last_validated_progress, 100)}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  {project.prev_month_validation && (
+                    <p className="text-xs text-slate-400 pt-1">
+                      Validation mois préc. :
+                      <span className={`ml-1 font-semibold ${project.prev_month_validation.status === 'validated' ? 'text-green-400' : 'text-amber-400'}`}>
+                        {project.prev_month_validation.status === 'validated' ? 'Validé' : 'En attente'}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Équipe */}
+            {((project.coordinators && project.coordinators.length > 0) || (project.contributors && project.contributors.length > 0)) && (
+              <div className="border-t border-slate-700/50 pt-6">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                  <Users size={12} /> Équipe
+                </p>
+                <div className="space-y-3">
+                  {project.coordinators && project.coordinators.length > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-400 mb-1.5">Coordinateurs</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {project.coordinators.map((c) => (
+                          <span key={c.id} className="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded font-medium">{c.login}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {project.contributors && project.contributors.length > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-400 mb-1.5">Contributeurs</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {project.contributors.map((c) => (
+                          <span key={c.id} className="bg-slate-700/60 text-slate-300 text-xs px-2 py-1 rounded font-medium">{c.login}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Alertes */}
+            {project.health_warnings && project.health_warnings.length > 0 && (
+              <div className="border-t border-slate-700/50 pt-6">
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                  <AlertTriangle size={12} /> Alertes
+                </p>
+                <div className="space-y-1.5">
+                  {project.health_warnings.map((w, i) => (
+                    <div key={i} className={`flex items-center gap-2 text-xs px-2 py-1.5 rounded ${
+                      w.level === 'warning' ? 'bg-amber-500/10 text-amber-300' : 'bg-slate-700/40 text-slate-400'
+                    }`}>
+                      <AlertTriangle size={11} className="flex-shrink-0" />
+                      {w.code.replace(/_/g, ' ')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Link to Dolibarr */}
             <div className="border-t border-slate-700/50 pt-6">

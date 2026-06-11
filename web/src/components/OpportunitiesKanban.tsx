@@ -1,4 +1,5 @@
 import React from 'react'
+import { AlertTriangle } from 'lucide-react'
 import type { OpportunityStageGroup, OpportunitySummary } from '../types'
 
 const formatAmount = (amount: number): string => {
@@ -89,10 +90,15 @@ export const OpportunitiesKanban: React.FC<OpportunitiesKanbanProps> = ({ pipeli
                     onClick={() => onOpportunityClick?.(opp)}
                     className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg p-3 shadow-lg border border-slate-600 hover:border-slate-500 hover:shadow-xl transition-all duration-200 cursor-pointer group"
                   >
-                    <div className="font-semibold text-slate-100 text-xs truncate group-hover:text-blue-300 transition-colors">
-                      {opp.title}
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <div className="font-semibold text-slate-100 text-xs truncate group-hover:text-blue-300 transition-colors flex-1">
+                        {opp.title}
+                      </div>
+                      {opp.health_warnings?.some(w => w.level === 'warning') && (
+                        <AlertTriangle size={11} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                      )}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1 truncate">{opp.ref}</div>
+                    <div className="text-xs text-slate-500 truncate">{opp.ref}</div>
 
                     <div className="mt-3 pt-3 border-t border-slate-700/50 space-y-2">
                       <div className="flex justify-between items-end">
@@ -101,6 +107,17 @@ export const OpportunitiesKanban: React.FC<OpportunitiesKanbanProps> = ({ pipeli
                           {formatAmount(opp.opp_amount)}
                         </span>
                       </div>
+                      {opp.opp_percent > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-slate-500">Probabilité</span>
+                          <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${config.iconColor} bg-slate-700/40`}>{opp.opp_percent}%</span>
+                        </div>
+                      )}
+                      {opp.coordinators && opp.coordinators.length > 0 && (
+                        <div className="text-xs text-slate-500 truncate">
+                          👤 {opp.coordinators.map(c => c.login.split(' ')[0]).join(', ')}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

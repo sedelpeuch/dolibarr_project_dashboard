@@ -1,21 +1,91 @@
 """Projects configuration routes"""
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.config import settings
-from src.infrastructure import DolibarrClient, load_data, save_data
+from src.infrastructure import DolibarrClient, GaaspardClient, load_data, save_data
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["projects"])
 
-# Initialize Dolibarr client
 dolibarr = DolibarrClient(settings.dolibarr_url, settings.doliapikey)
+gaaspard = GaaspardClient(settings.dolibarr_url, settings.doliapikey)
+
+
+class ProjectConfigRequest(BaseModel):
+    """Request body for updating projects config"""
+
+    projects: list[int]
+
+
+@router.get("/projects-config")
+def get_projects_config():
+    """Get current projects config: Gaaspard projects + extra IDs from data.json"""
+    try:
+        # All projects the user is coordinator/contributor on
+        gaaspard_projects = gaaspard.get_all_projects(include_closed=True)
+        gaaspard_by_id = {int(p["rowid"]): p for p in gaaspard_projects}
+
+        data = load_data()
+        extra_ids = [
+            pid for pid in data.get("projects", []) if pid not in gaaspard_by_id
+        ]
+
+        # Build project list: Gaaspard projects first (rich data), then extras via Dolibarr
+        result = []
+        for p in gaaspard_projects:
+            ref = p.get("ref", "")
+            ref_code = ref.split(" ")[0] if ref else ref
+            result.append({
+                "id": int(p["rowid"]),
+                "ref": ref_code,
+                "title": p.get("title", ""),
+                "status": "closed" if p.get("status") == "closed" else "open",
+                "source": "gaaspard",
+            })
+
+        # Extra projects: single Dolibarr calls
+        for pid in extra_ids:
+            try:
+                proj = dolibarr.get_project_by_id(pid)
+                result.append({
+                    "id": pid,
+                    "ref": proj.get("ref", str(pid)),
+                    "title": proj.get("title", "Unknown"),
+                    "status": proj.get("status"),
+                    "source": "manual",
+                })
+            except Exception as e:
+                logger.warning(f"Failed to fetch extra project {pid}: {e}")
+                result.append({
+                    "id": pid,
+                    "ref": str(pid),
+                    "title": "Unknown",
+                    "status": None,
+                    "source": "manual",
+                })
+
+        return {"projects": result}
+    except Exception as e:
+        logger.error(f"Error reading projects config: {e}")
+        return {"projects": []}
+
+
+@router.post("/projects-config")
+def update_projects_config(request: ProjectConfigRequest):
+    """Save extra project IDs (manual additions beyond Gaaspard scope)"""
+    try:
+        data = load_data()
+        data["projects"] = request.projects
+        save_data(data)
+        return {"success": True, "projects": request.projects}
+    except Exception as e:
+        logger.error(f"Error updating projects config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 class ProjectConfigRequest(BaseModel):

@@ -83,6 +83,20 @@ class DolibarrClient:
             f"/api/index.php/projects/{project_id}",
         )
 
+    def list_opportunities(self) -> list[dict[str, Any]]:
+        """Get all OPP- projects in one call (for opp_status)."""
+        try:
+            return self._request(
+                "GET",
+                "/api/index.php/projects",
+                params={
+                    "limit": "500",
+                    "sqlfilters": "(t.ref:like:'OPP-%')",
+                },
+            )
+        except Exception:
+            return []
+
     def get_project_tasks(self, project_id: int) -> list[dict[str, Any]]:
         """Get all tasks for a project with timespent data"""
         return self._request(

@@ -5,18 +5,18 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from src.config import settings
-from src.infrastructure import DolibarrClient
+from src.infrastructure import GaaspardClient
 from src.services.opportunity_service import OpportunitiesService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["opportunities"])
 
-# Initialize Dolibarr client
-dolibarr = DolibarrClient(settings.dolibarr_url, settings.doliapikey)
+# Initialize Gaaspard client
+gaaspard = GaaspardClient(settings.dolibarr_url, settings.doliapikey)
 
 # Initialize opportunities service
-opportunities_service = OpportunitiesService(dolibarr)
+opportunities_service = OpportunitiesService(gaaspard)
 
 
 @router.get("/api/opportunities/stats")

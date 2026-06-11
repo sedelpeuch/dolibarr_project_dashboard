@@ -1,5 +1,5 @@
 import React from 'react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, AlertTriangle } from 'lucide-react'
 import { dolibarrLinks, UNITECH_MAP, UNITECH_COLORS } from '../config'
 import type { Project } from '../types'
 import { getPlannedDays } from '../utils'
@@ -30,12 +30,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   onDetailClick,
 }) => {
-  // Calculate amount to display based on project type
   const displayAmount = project.is_opportunity
     ? (project.opp_amount * project.opp_percent) / 100
     : project.budget_amount;
 
   const unittechs = getUnittechs(project.unittech);
+  const hasWarnings = project.health_warnings?.some(w => w.level === 'warning');
+  const realPct = project.real_progress ?? null;
+  const declaredPct = project.declared_progress ?? null;
 
   return (
     <div
@@ -63,6 +65,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
           {/* Badges - right aligned */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
+            {hasWarnings && (
+              <span title="Alertes sur ce projet">
+                <AlertTriangle size={14} className="text-amber-400" />
+              </span>
+            )}
             {project.isCoordinator && (
               <span
                 className="bg-blue-500/30 text-blue-300 text-xs px-2 py-1 rounded font-semibold whitespace-nowrap shadow-lg"
@@ -96,6 +103,32 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         >
           {project.client_name || "N/A"}
         </a>
+      )}
+
+      {/* Progress bars */}
+      {(realPct !== null || declaredPct !== null) && !project.is_opportunity && (
+        <div className="mb-3 space-y-1">
+          {realPct !== null && (
+            <div>
+              <div className="flex justify-between text-xs text-slate-400 mb-0.5">
+                <span>Réel</span><span>{realPct.toFixed(0)}%</span>
+              </div>
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(realPct, 100)}%` }} />
+              </div>
+            </div>
+          )}
+          {declaredPct !== null && (
+            <div>
+              <div className="flex justify-between text-xs text-slate-400 mb-0.5">
+                <span>Déclaré</span><span>{declaredPct.toFixed(0)}%</span>
+              </div>
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(declaredPct, 100)}%` }} />
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Info rows */}

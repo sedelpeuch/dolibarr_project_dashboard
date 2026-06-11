@@ -4,7 +4,12 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from src.infrastructure import DolibarrClient, ThreadSafeCache, load_data
+from src.infrastructure import (
+    DolibarrClient,
+    GaaspardClient,
+    ThreadSafeCache,
+    load_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,33 +27,58 @@ def _get_adaptive_workers(total_items: int) -> int:
 
 
 class DashboardService:
-    """Service pour construire les données du dashboard"""
+    """Service pour construire les données du dashboard.
 
-    def __init__(self, dolibarr_client: DolibarrClient):
+    Source primaire : Gaaspard _index APIs (3 appels pour toute la liste).
+    Dolibarr : uniquement pour les détails (tasks, invoices, proposals).
+    data.json["projects"] : liste des IDs supplémentaires non couverts par l'API
+                            (anciens projets dont l'utilisateur n'est plus coordinateur).
+    """
+
+    def __init__(
+        self, dolibarr_client: DolibarrClient, gaaspard_client: GaaspardClient
+    ):
         self.dolibarr = dolibarr_client
+        self.gaaspard = gaaspard_client
 
     def get_dashboard_data(self) -> dict[str, list]:
         """Construire les données complètes du dashboard"""
         try:
-            # Charger la liste des projets depuis data.json
+            # ── 1. Récupérer tous les projets via Gaaspard (3 appels parallèles) ──
+            gaaspard_projects = self.gaaspard.get_all_projects(include_closed=True)
+            gaaspard_by_id = {int(p["rowid"]): p for p in gaaspard_projects}
+
+            # ── 2. Compléter avec les IDs supplémentaires de data.json ──
             data = load_data()
-            tracked_project_ids = data.get("projects", [])
+            extra_ids = [
+                pid for pid in data.get("projects", []) if pid not in gaaspard_by_id
+            ]
 
-            if not tracked_project_ids:
-                return {"projects": []}
+            # Auto-sync: persist the full merged list back to data.json
+            all_ids = sorted(set(gaaspard_by_id.keys()) | set(data.get("projects", [])))
+            if set(all_ids) != set(data.get("projects", [])):
+                data["projects"] = all_ids
+                from src.infrastructure import save_data
 
+                save_data(data)
+
+            # ── 3. Enrichir avec les détails Dolibarr (tasks, invoices, proposals) ──
             projects = []
-            # Paralléliser la construction des données de projet avec workers adaptatifs
-            max_workers = _get_adaptive_workers(len(tracked_project_ids))
+            max_workers = _get_adaptive_workers(len(gaaspard_by_id) + len(extra_ids))
+
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                # Soumettre tous les projets
-                future_to_id = {
-                    executor.submit(self._build_project_data, project_id): project_id
-                    for project_id in tracked_project_ids
-                }
-                # Récupérer les résultats au fur et à mesure
-                for future in as_completed(future_to_id):
-                    project_id = future_to_id[future]
+                futures = {}
+
+                # Projets Gaaspard — enrichissement partiel (détails seulement)
+                for pid, gp in gaaspard_by_id.items():
+                    futures[executor.submit(self._build_from_gaaspard, pid, gp)] = pid
+
+                # Projets extra — chargement complet depuis Dolibarr
+                for pid in extra_ids:
+                    futures[executor.submit(self._build_from_dolibarr, pid)] = pid
+
+                for future in as_completed(futures):
+                    pid = futures[future]
                     try:
                         project_data = future.result(timeout=30)
                         if project_data:
@@ -56,39 +86,131 @@ class DashboardService:
                     except Exception as e:
                         logger.warning(
                             "Error processing project",
-                            extra={
-                                "context": {"project_id": project_id, "error": str(e)},
-                            },
+                            extra={"context": {"project_id": pid, "error": str(e)}},
                         )
-                        continue
 
             return {"projects": projects}
 
         except Exception as e:
             logger.error(
-                "Error building dashboard",
-                extra={"context": {"error": str(e)}},
+                "Error building dashboard", extra={"context": {"error": str(e)}}
             )
             raise
 
-    def _build_project_data(self, project_id: int) -> dict[str, Any] | None:
-        """Construire les données d'un projet spécifique"""
-        # Get project details
-        proj = self.dolibarr.get_project_by_id(project_id)
+    # ── Build from Gaaspard index data + Dolibarr details ─────────────────────
 
+    def _build_from_gaaspard(
+        self, project_id: int, gp: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        """Build project data using Gaaspard index as base + Dolibarr for financials."""
+        ref = gp.get("ref", "")
+        # ref in Gaaspard index is "PJ-XXX Short title" — split on first space
+        ref_parts = ref.split(" ", 1)
+        ref_code = ref_parts[0] if ref_parts else ""
+        # Use the title portion from ref (reliable) rather than gp["title"]
+        # which can contain raw Dolibarr HTML description for some projects
+        title_from_ref = ref_parts[1] if len(ref_parts) > 1 else ref
+        is_opportunity = ref_code.startswith("OPP-")
+        is_rd = ref_code.startswith("RD-") or ref_code.startswith("CA-")
+
+        # Gaaspard client field
+        client_name = gp.get("client", "N/A") or "N/A"
+
+        # Fetch Dolibarr details for financial data (tasks, invoices, proposals)
+        time_spent_total = 0.0
+        tasks_data: list = []
+        invoiced_amount = 0.0
+        invoices_data: list = []
+        proposals_data: list = []
+
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            t_future = ex.submit(self._get_tasks_data, project_id)
+            i_future = ex.submit(self._get_invoices_data, project_id)
+            p_future = ex.submit(self._get_proposals_data, project_id)
+
+        try:
+            time_spent_total, tasks_data = t_future.result(timeout=30)
+        except Exception as e:
+            logger.warning(f"Tasks fetch failed for {project_id}: {e}")
+        try:
+            invoiced_amount, invoices_data = i_future.result(timeout=30)
+        except Exception as e:
+            logger.warning(f"Invoices fetch failed for {project_id}: {e}")
+        try:
+            proposals_data = p_future.result(timeout=30)
+        except Exception as e:
+            logger.warning(f"Proposals fetch failed for {project_id}: {e}")
+
+        timespent_by_user = self._extract_timespent_by_user(tasks_data)
+
+        # Map Gaaspard status → Dolibarr-style numeric
+        raw_status = gp.get("status", "open")
+        status = "2" if raw_status == "closed" else "1"
+
+        # Parse dates (Gaaspard gives YYYY-MM-DD strings → convert to timestamps)
+        date_start = self._parse_date(gp.get("start_date"))
+        date_end = self._parse_date(gp.get("end_date"))
+
+        # Unittech from coordinators list (Gaaspard doesn't expose it directly)
+        # Will be enriched later if needed; default empty
+        unittech: list[int] = []
+
+        return {
+            "id": project_id,
+            "ref": ref_code,
+            "title": title_from_ref,
+            "client_id": "",
+            "client_name": client_name,
+            "client_code": "",
+            "client_address": "",
+            "client_zip": "",
+            "client_town": "",
+            "client_country_code": "",
+            "status": status,
+            "date_start": date_start,
+            "date_end": date_end,
+            "budget_total": float(gp.get("budget_amount") or 0),
+            "total_invoiced": invoiced_amount,
+            "budget_remaining": float(gp.get("budget_amount") or 0),
+            "is_opportunity": is_opportunity,
+            "is_rd": is_rd,
+            "description": "",
+            "unittech": unittech,
+            "wp_days": 0.0,
+            "rd_days": 0.0,
+            "budget_amount": float(gp.get("budget_amount") or 0),
+            "opp_amount": float(gp.get("opp_amount") or 0),
+            "opp_percent": float(gp.get("opp_percent") or 0),
+            "time_spent_total": time_spent_total,
+            "invoices": invoices_data,
+            "proposals": proposals_data,
+            "tasks": tasks_data,
+            "timespent_by_user": timespent_by_user,
+            # ── Champs enrichis depuis Gaaspard ──────────────────────────────
+            "real_progress": gp.get("real_progress"),
+            "declared_progress": gp.get("declared_progress"),
+            "last_validated_progress": gp.get("last_validated_progress"),
+            "prev_month_progress": gp.get("prev_month_progress"),
+            "prev_month_validation": gp.get("prev_month_validation"),
+            "health_warnings": gp.get("health_warnings", []),
+            "mp_timesheets": gp.get("mp_timesheets"),
+            "coordinators": gp.get("coordinators", []),
+            "contributors": gp.get("contributors", []),
+            "unittech_names": gp.get("unittech_names", []),
+        }
+
+    def _build_from_dolibarr(self, project_id: int) -> dict[str, Any] | None:
+        """Full build from Dolibarr (fallback for extra projects)."""
+        proj = self.dolibarr.get_project_by_id(project_id)
         if not proj:
             logger.warning(f"Project {project_id} not found")
             return None
 
-        # Convert budget to float, handling string values
         budget = float(proj.get("budget", 0) or 0)
-
-        # Determine classification based on ref prefix
         ref = proj.get("ref", "")
         is_opportunity = ref.startswith("OPP-") if ref else False
         is_rd = ref.startswith("RD-") if ref else False
 
-        # Get client name with caching
         client_id = proj.get("socid", "")
         client_data = (
             self._get_thirdparty_name(client_id)
@@ -108,49 +230,39 @@ class DashboardService:
             else client_data
         )
 
-        # Extract custom fields
         array_options = proj.get("array_options", {}) or {}
-
-        # Parse unittech
         unittech_str = array_options.get("options_unittech", "") or ""
-        unittech = []
+        unittech: list[int] = []
         if unittech_str:
             try:
-                unittech = [int(val.strip()) for val in str(unittech_str).split(",")]
+                unittech = [int(v.strip()) for v in str(unittech_str).split(",")]
             except (ValueError, AttributeError):
                 unittech = []
 
         wp_days = float(array_options.get("options_wp_days", 0) or 0)
         rd_days = float(array_options.get("options_rd_days", 0) or 0)
-
-        # Budget amounts
         budget_amount = float(proj.get("budget_amount", 0) or 0)
         opp_amount = float(proj.get("opp_amount", 0) or 0)
         opp_percent = float(proj.get("opp_percent", 0) or 0)
 
-        # Paralléliser les 3 appels API internes (tasks, invoices, proposals)
         time_spent_total = 0.0
-        tasks_data = []
+        tasks_data: list = []
         invoiced_amount = 0.0
-        invoices_data = []
-        proposals_data = []
+        invoices_data: list = []
+        proposals_data: list = []
 
         with ThreadPoolExecutor(max_workers=3) as executor:
-            tasks_future = executor.submit(self._get_tasks_data, project_id)
-            invoices_future = executor.submit(self._get_invoices_data, project_id)
-            proposals_future = executor.submit(self._get_proposals_data, project_id)
+            t_f = executor.submit(self._get_tasks_data, project_id)
+            i_f = executor.submit(self._get_invoices_data, project_id)
+            p_f = executor.submit(self._get_proposals_data, project_id)
 
-            try:
-                time_spent_total, tasks_data = tasks_future.result(timeout=30)
-                invoiced_amount, invoices_data = invoices_future.result(timeout=30)
-                proposals_data = proposals_future.result(timeout=30)
-            except Exception as e:
-                logger.warning(
-                    "Error fetching project data",
-                    extra={"context": {"project_id": project_id, "error": str(e)}},
-                )
+        try:
+            time_spent_total, tasks_data = t_f.result(timeout=30)
+            invoiced_amount, invoices_data = i_f.result(timeout=30)
+            proposals_data = p_f.result(timeout=30)
+        except Exception as e:
+            logger.warning(f"Error fetching project data for {project_id}: {e}")
 
-        # Extract timespent by user from tasks
         timespent_by_user = self._extract_timespent_by_user(tasks_data)
 
         return {
@@ -194,7 +306,36 @@ class DashboardService:
             "proposals": proposals_data,
             "tasks": tasks_data,
             "timespent_by_user": timespent_by_user,
+            # Gaaspard fields absent for extra projects
+            "real_progress": None,
+            "declared_progress": None,
+            "last_validated_progress": None,
+            "prev_month_progress": None,
+            "prev_month_validation": None,
+            "health_warnings": [],
+            "mp_timesheets": None,
+            "coordinators": [],
+            "contributors": [],
+            "unittech_names": [],
         }
+
+    # ── Helpers ────────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _parse_date(date_str: str | None) -> int | None:
+        """Convert YYYY-MM-DD to Unix timestamp (noon UTC)."""
+        if not date_str:
+            return None
+        try:
+            from datetime import datetime, timezone
+
+            dt = datetime.strptime(date_str, "%Y-%m-%d").replace(
+                hour=12,
+                tzinfo=timezone.utc,
+            )
+            return int(dt.timestamp())
+        except (ValueError, TypeError):
+            return None
 
     def _get_thirdparty_name(self, client_id: int) -> dict[str, Any]:
         """Get thirdparty name with thread-safe caching"""
@@ -260,7 +401,8 @@ class DashboardService:
 
                                 timespent_date = line.get("timespent_line_date")
                                 timespent_duration = line.get(
-                                    "timespent_line_duration", 0
+                                    "timespent_line_duration",
+                                    0,
                                 )
                                 timespent_user_id = line.get("timespent_line_fk_user")
 

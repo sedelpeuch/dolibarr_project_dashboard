@@ -1,10 +1,9 @@
 """Opportunities service - business logic for opportunities dashboard"""
 
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from src.infrastructure import DolibarrClient, load_data
+from src.infrastructure import GaaspardClient
 
 logger = logging.getLogger(__name__)
 
@@ -12,43 +11,45 @@ logger = logging.getLogger(__name__)
 class OpportunitiesService:
     """Service pour les données d'opportunités"""
 
-    def __init__(self, dolibarr_client: DolibarrClient):
-        self.dolibarr = dolibarr_client
+    def __init__(self, gaaspard_client: GaaspardClient):
+        self.gaaspard = gaaspard_client
+
+    @staticmethod
+    def _normalize(opp: dict, opp_status_override: str | None = None) -> dict:
+        """Normalise un objet Gaaspard opportunité vers la forme attendue."""
+        ref = opp.get("ref", "")
+        parts = ref.split(" ", 1)
+        ref_code = parts[0]
+        title = parts[1] if len(parts) > 1 else ref
+
+        opp_status = opp_status_override or str(opp.get("fk_opp_status") or "1")
+
+        return {
+            **opp,
+            "id": opp.get("rowid") or opp.get("id"),
+            "ref": ref_code,
+            "title": title,
+            "opp_status": opp_status,
+        }
 
     def get_opportunities_data(self) -> list[dict[str, Any]]:
-        """Récupérer la liste des opportunités (projets avec ref OPP-)"""
+        """Récupérer les opportunités depuis Gaaspard avec fk_opp_status réel."""
         try:
-            # Charger la liste des projets depuis data.json
-            data = load_data()
-            tracked_project_ids = data.get("projects", [])
+            # /projects contient fk_opp_status (vrai champ Dolibarr)
+            all_projects = self.gaaspard.get_projects(include_closed=True)
+            opp_status_map = {
+                int(p["rowid"]): str(p.get("fk_opp_status") or "1")
+                for p in all_projects
+                if p.get("rowid")
+            }
 
-            if not tracked_project_ids:
-                return []
-
-            opportunities = []
-            # Paralléliser la récupération des détails
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_id = {
-                    executor.submit(
-                        self.dolibarr.get_project_by_id,
-                        project_id,
-                    ): project_id
-                    for project_id in tracked_project_ids
-                }
-                for future in as_completed(future_to_id):
-                    project_id = future_to_id[future]
-                    try:
-                        proj = future.result(timeout=30)
-                        if proj and self._is_opportunity(proj):
-                            opportunities.append(proj)
-                    except Exception as e:
-                        logger.warning(
-                            f"Error processing opportunity {project_id}: {e}",
-                        )
-                        continue
-
-            return opportunities
-
+            raw = self.gaaspard.get_opportunities_index(include_closed=True)
+            result = []
+            for o in raw:
+                rowid = int(o.get("rowid") or 0)
+                status_override = opp_status_map.get(rowid)
+                result.append(self._normalize(o, status_override))
+            return result
         except Exception as e:
             logger.error(f"Error building opportunities data: {e}")
             raise
@@ -56,16 +57,10 @@ class OpportunitiesService:
     def get_stats(self) -> dict[str, Any]:
         """Calculer les stats des opportunités"""
         opps = self.get_opportunities_data()
-        all_projects = self._get_all_projects()
+        # Real projects = PJ-* only (rd_index excluded by design)
+        real_projects = self.gaaspard.get_projects_index(include_closed=True)
 
-        # Filtrer les projets (pas opp, pas rd)
-        real_projects = [
-            p
-            for p in all_projects
-            if not self._is_opportunity(p) and not self._is_rd(p)
-        ]
-
-        # Filtrer les opps
+        # Après _normalize, opp_status est un str "1"–"7"
         open_opps = [
             o for o in opps if not self._is_opp_lost(o) and o.get("opp_status") != "6"
         ]
@@ -101,34 +96,6 @@ class OpportunitiesService:
             "lost_amount": lost_amount,
         }
 
-    def _get_all_projects(self) -> list[dict[str, Any]]:
-        """Récupérer tous les projets suivis"""
-        try:
-            data = load_data()
-            tracked_project_ids = data.get("projects", [])
-
-            all_projects = []
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_id = {
-                    executor.submit(
-                        self.dolibarr.get_project_by_id,
-                        project_id,
-                    ): project_id
-                    for project_id in tracked_project_ids
-                }
-                for future in as_completed(future_to_id):
-                    try:
-                        proj = future.result(timeout=30)
-                        if proj:
-                            all_projects.append(proj)
-                    except Exception as e:
-                        logger.warning(f"Error loading project: {e}")
-                        continue
-            return all_projects
-        except Exception as e:
-            logger.error(f"Error getting all projects: {e}")
-            return []
-
     def get_pipeline(self) -> dict[str, Any]:
         """Grouper les opportunités par étape (opp_status)"""
         opps = self.get_opportunities_data()
@@ -161,7 +128,7 @@ class OpportunitiesService:
             stage_code = opp.get("opp_status") or "1"
 
             # Si opp_status est 6 (Gagnée), ne pas l'afficher dans le pipeline
-            if stage_code == "6":
+            if str(stage_code) == "6":
                 continue
 
             stage_name = stage_names.get(str(stage_code), f"Étape {stage_code}")
@@ -178,6 +145,8 @@ class OpportunitiesService:
                     "opp_percent": float(opp.get("opp_percent") or 0),
                     "opp_status": opp.get("opp_status"),
                     "status": opp.get("status"),
+                    "coordinators": opp.get("coordinators") or [],
+                    "health_warnings": opp.get("health_warnings") or [],
                 },
             )
 

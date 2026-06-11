@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
 import { API_URL } from './config'
-import type { DashboardData, OpportunityStats, OpportunityStageGroup, WorkloadConfig } from './types'
+import type { DashboardData, OpportunityStats, OpportunityStageGroup, WorkloadConfig, PersonReport } from './types'
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -53,6 +53,11 @@ export const apiService = {
       console.error('Error saving workload config:', error)
       throw error
     }
+  },
+  getPersonReport: async (year?: number): Promise<PersonReport> => {
+    const params = year ? { year } : {}
+    const response = await api.get('/person-report', { params })
+    return response.data
   },
 }
 

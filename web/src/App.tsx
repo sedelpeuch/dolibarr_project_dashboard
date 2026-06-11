@@ -16,9 +16,9 @@ import { OpportunitiesTab } from './components/OpportunitiesTab'
 import { TabButton } from './components/TabButton'
 import { RDTab } from './components/RDTab'
 import { WorkloadTab } from './components/WorkloadTab'
+import PointageTab from './components/PointageTab'
 import { APP_NAME, ENABLE_META_PROJECTS } from './config'
 import { ClosedSection } from './components/ClosedSection'
-import ProjectsRealProgressModal from './components/ProjectsRealProgressModal'
 import type { TabType } from './types'
 import { apiService } from './api'
 
@@ -100,6 +100,10 @@ function App() {
       return <WorkloadTab allProjects={data?.projects || []} />
     }
 
+    if (app.activeTab === 'pointage') {
+      return <PointageTab />
+    }
+
     const config = tabsConfig.find((c) => c.type === app.activeTab)
     if (!config) return null
 
@@ -159,15 +163,7 @@ function App() {
           />
         )}
 
-        {/* Real Progress Button */}
-        <div className="flex justify-center mt-8">
-          <button
-            onClick={() => app.setIsRealProgressModalOpen(true)}
-            className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all shadow-lg hover:shadow-purple-500/20"
-          >
-            Avancement Réel
-          </button>
-        </div>
+
       </>
     )
   }
@@ -244,6 +240,11 @@ function App() {
             isActive={app.activeTab === 'workload'}
             onClick={() => app.setActiveTab('workload')}
           />
+          <TabButton
+            label="Pointage"
+            isActive={app.activeTab === 'pointage'}
+            onClick={() => app.setActiveTab('pointage')}
+          />
         </div>
       </div>
 
@@ -261,11 +262,7 @@ function App() {
         }}
         onToggleCoordinator={updateCoordinatorStatus}
       />
-      <ProjectsRealProgressModal
-        projects={app.filtered.projects.filter((p) => p.isCoordinator)}
-        isOpen={app.isRealProgressModalOpen}
-        onClose={() => app.setIsRealProgressModalOpen(false)}
-      />
+
       {app.selectedMetaProjectId && getById(app.selectedMetaProjectId) && (
         <MetaProjectDetailModal
           metaProject={getById(app.selectedMetaProjectId)!}
