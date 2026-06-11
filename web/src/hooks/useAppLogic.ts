@@ -24,6 +24,7 @@ export function useAppLogic(projects: Project[] = []) {
       rd: filtered.rd,
       'meta-projects': [],
       workload: [],
+      pointage: [],
     }
     const list = typeMap[activeTab]
     return showClosed ? list : list.filter((p) => p.status !== '2')

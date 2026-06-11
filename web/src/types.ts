@@ -201,6 +201,15 @@ export interface PersonReport {
 }
 
 export interface OpportunityStats {
+  conversion_rate: number
+  won_count: number
+  lost_count: number
+  open_count: number
+  potential_amount: number
+  total_amount: number
+  real_projects: number
+  weighted_open_amount: number
+}
 
 export interface OpportunitySummary {
   id: string | number
