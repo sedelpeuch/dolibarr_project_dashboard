@@ -1,6 +1,7 @@
 """Projects configuration routes"""
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
