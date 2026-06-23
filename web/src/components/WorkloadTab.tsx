@@ -85,20 +85,35 @@ const MONTH_NAMES = [
 
 const DOW_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
-// ── load → HSL color (green=0% → red=80%+) ───────────────────────────────────
+// ── load → HSL color (green=0% → orange=80% → dark-red=100% → fuchsia>100%) ──
 
 function loadBgColor(load: number): string {
   if (load <= 0) return 'transparent'
-  const t = Math.min(load / 0.8, 1)
-  const hue = Math.round(120 - 120 * t) // 120=green → 0=red
-  return `hsla(${hue}, 70%, 35%, 0.55)`
+  if (load > 1) return `hsla(320, 85%, 35%, 0.70)` // fuchsia
+  if (load <= 0.8) {
+    // green (120) → orange (30) over 0-80%
+    const t = load / 0.8
+    const hue = Math.round(120 - 90 * t)
+    return `hsla(${hue}, 70%, 35%, 0.55)`
+  }
+  // orange (30) → dark red (0) over 80-100%, lightness decreasing
+  const t = (load - 0.8) / 0.2
+  const hue = Math.round(30 - 30 * t)
+  const lightness = Math.round(35 - 10 * t)
+  return `hsla(${hue}, 80%, ${lightness}%, 0.65)`
 }
 
 function loadTextColor(load: number): string {
   if (load <= 0) return '#94a3b8' // slate-400
-  const t = Math.min(load / 0.8, 1)
-  const hue = Math.round(120 - 120 * t)
-  return `hsl(${hue}, 80%, 70%)`
+  if (load > 1) return `hsl(320, 90%, 75%)` // fuchsia
+  if (load <= 0.8) {
+    const t = load / 0.8
+    const hue = Math.round(120 - 90 * t)
+    return `hsl(${hue}, 80%, 70%)`
+  }
+  const t = (load - 0.8) / 0.2
+  const hue = Math.round(30 - 30 * t)
+  return `hsl(${hue}, 85%, 70%)`
 }
 
 // ── types ─────────────────────────────────────────────────────────────────────
